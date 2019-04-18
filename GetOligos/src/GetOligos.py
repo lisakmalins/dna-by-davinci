@@ -9,16 +9,17 @@ Step size between 45-mers is 3 (values hardcoded)
 Program removes newlines from 45-mers.
 Output is [chromosome number],[index],[sequence].
 
-Includes easy comment-out swap to switch between
-    accepting filename as command-line argument
-    and hard-coding filename to run quickly from IDE
-    or from command-line without arguments.
-
 K-mer and header classes are in separate files.
 Header class will need to be remade for different assemblies
     since header formats vary (see comments in class)
 Header class lets this file know whether to get k-mers
     out of a section or skip it.
+
+Accepts as arguments the source filename, k-mer size, step size,
+    and output filename.
+
+Example command:
+python GetOligos.py zmays_fake_genome.fa 45 3 test_output.fa
 """
 
 import sys
@@ -62,33 +63,34 @@ def FindNextHeader(fo):
 
 #-------------------main-----------------------
 
-# Read file name as argument
-# (Comment out to use hard-coded filename)
-filename = sys.argv[1]
+# Read arguments
+# (Comment out to use hard-coded argumemts)
+source_name = sys.argv[1]
+mer_size = int(sys.argv[2])
+step_size = int(sys.argv[3])
+output_name = sys.argv[4]
 
-# Hard-code filename
-# (Comment out to accept file as command-line argument)
-# filename = "zmays_fake_genome.fa"
-
-# Open file in read-only mode
-fo = open(filename, "r")
-if fo.closed:
+# Open source file in read-only mode
+source = open(source_name, "r")
+if source.closed:
     sys.exit("File open unsuccessful")
 
+output = open(output_name, "w")
+
 # Create Kmer object
-currentKmer = Kmer(fo)
+currentKmer = Kmer(source, mer_size, step_size)
 
 # Loop through entire file
 while not currentKmer.eof:
 
     # Find next header and start a new k-mer
-    nextHeader = FindNextHeader(fo)
+    nextHeader = FindNextHeader(source)
     currentKmer.StartNewKMer(nextHeader.id)
 
     # Loop through sequence until next header
     while not currentKmer.eos:
-        print(currentKmer.id, ",", currentKmer.index, ",", currentKmer.seq)
+        output.write("> " + currentKmer.id + " " + str(currentKmer.index) + " \n" + str(currentKmer.seq) + "\n")
         currentKmer.GetNextKMer()
 
 # Close file
-fo.close()
+source.close()

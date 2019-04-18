@@ -16,19 +16,22 @@ Object also has flags for end of section
     and end of file to return to main.
 
 Methods:
-StartNewKMer() resets attributes and starts new 45-mer
+StartNewKMer() resets attributes and starts new k-mer
     from next section in file.
-GetNextKMer() forgets first 3 letters of sequence
-    and fetches next 3 letters to get next k-mer (step size = 3)
+GetNextKMer() forgets first s letters of sequence
+    and fetches next s letters to get next k-mer
     or returns to main if end of section or end of file reached.
 """
 
 class Kmer:
 
     # Constructor
-    def __init__(self, f):
+    def __init__(self, f, k, s):
         self.fo = f         # File to read from
         self.counter = 0    # Position in file (next letter to read)
+
+        self.k = k          # K-mer size
+        self.s = s          # Step size (how far to advance on next k-mer)
 
         self.id = 0         # Chromosome ID
         self.index = 1      # Index within chromosome (refers to starting letter of seq)
@@ -37,7 +40,7 @@ class Kmer:
         self.eos = False    # Has program reached the end of the section?
         self.eof = False    # Has program reached the end of the file?
 
-    # To start new chromosome, reset attributes and get next 45-mer
+    # To start new chromosome, reset attributes and get next k-mer
     def StartNewKMer(self, id):
         # Set chromosome id
         self.id = id
@@ -54,21 +57,21 @@ class Kmer:
         # Wipe stored k-mer sequence
         self.seq = ""
 
-        # Read next 45 letters, starting at stored counter position
+        # Read next k letters, starting at stored counter position
         #   and ignoring non-alphabetical characters
-        while len(self.seq) < 45:
+        while len(self.seq) < self.k:
             nextChar = self.fo.read(1)
             if nextChar.isalpha():
                 self.seq += nextChar
             self.counter += 1
 
-    # To get next k-mer, forget first 3 letters and append next 3 letters
+    # To get next k-mer, forget first s letters and append next s letters
     def GetNextKMer(self):
         nextLetters = ""
         self.fo.seek(self.counter, 0)
 
-        # Fetch next 3 letters, ignoring spaces and newlines
-        while len(nextLetters) < 3:
+        # Fetch next s letters, ignoring spaces and newlines
+        while len(nextLetters) < self.s:
             nextChar = self.fo.read(1)
 
             # If next character exists and is a letter, add to nextLetters
@@ -91,5 +94,5 @@ class Kmer:
                 self.eof = True
                 return
 
-        # Forget first 3 letters of k-mer and append nextLetters
-        self.seq = self.seq[3:] + nextLetters
+        # Forget first s letters of k-mer and append nextLetters
+        self.seq = self.seq[self.s:] + nextLetters
