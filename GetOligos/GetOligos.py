@@ -6,8 +6,12 @@
 Script gets 45-mers out of .fa genome file.
 Step size between 45-mers is 3 (values hardcoded)
 
-Program removes newlines from 45-mers.
-Output is [chromosome number],[index],[sequence].
+Accepts as arguments the source filename, k-mer size, step size,
+    and output filename.
+
+Output is in fasta format:
+    > [chromosome number] [index]
+    [sequence]
 
 K-mer and header classes are in separate files.
 Header class will need to be remade for different assemblies
