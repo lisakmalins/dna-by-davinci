@@ -3,14 +3,13 @@
 # GetOligos.py
 
 """
-Script gets 45-mers out of .fa genome file.
-Step size between 45-mers is 3 (values hardcoded)
+Script gets k-mers out of fasta genome assembly.
 
 Accepts as arguments the source filename, k-mer size, step size,
     and output filename.
 
 Output is in fasta format:
-    > [chromosome number] [index]
+    >[chromosome number]_[index]
     [sequence]
 
 K-mer and header classes are in separate files.
@@ -19,11 +18,8 @@ Header class will need to be remade for different assemblies
 Header class lets this file know whether to get k-mers
     out of a section or skip it.
 
-Accepts as arguments the source filename, k-mer size, step size,
-    and output filename.
-
 Example command:
-python GetOligos.py zmays_fake_genome.fa 45 3 test_output.fa
+python GetOligos.py agra_cadabra_genome.fa 45 3 agra_cadabra_45mers.fa
 """
 
 import sys
@@ -68,7 +64,6 @@ def FindNextHeader(fo):
 #-------------------main-----------------------
 
 # Read arguments
-# (Comment out to use hard-coded argumemts)
 source_name = sys.argv[1]
 mer_size = int(sys.argv[2])
 step_size = int(sys.argv[3])
@@ -79,6 +74,7 @@ source = open(source_name, "r")
 if source.closed:
     sys.exit("File open unsuccessful")
 
+# Set up file output
 output = open(output_name, "w")
 
 # Create Kmer object
@@ -93,7 +89,7 @@ while not currentKmer.eof:
 
     # Loop through sequence until next header
     while not currentKmer.eos:
-        output.write("> " + currentKmer.id + " " + str(currentKmer.index) + " \n" + str(currentKmer.seq) + "\n")
+        output.write(">" + currentKmer.id + "_" + str(currentKmer.index) + " \n" + str(currentKmer.seq) + "\n")
         currentKmer.GetNextKMer()
 
 # Close file
