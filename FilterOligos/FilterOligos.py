@@ -1,10 +1,14 @@
-# 23 April 2019
+# 28 April 2019
 # Lisa Malins
 # FilterOligos.py
 
 """
 Python program to filter hybridization oligos using bwa and primer3.
 Based on bwa.py and primer3_filter.py from Chorus2 by zhangtaolab on GitHub.
+Currently writes "good" oligos to one file and "bad" oligos to another file for debugging.
+
+Example command:
+python3 FilterOligos.py tinymap.sam test_output.sam test_rejects.sam
 """
 
 import sys
@@ -82,29 +86,38 @@ def bwafilter(line, min_AS, max_XS):
 
 # Screens derpy oligos by making sure that: melting temperature is above the minimum,
 # hairpin melting temperature is below the maximum, and the difference between the two is sufficient.
-# Returns boolean: true = filter out, false = keep.
-def primer3_filter(sequence, mintm=37, maxhtm=35, dtm=10):
-
+def primer3_filter(line, min_TM=37, max_TM=35, min_diff_TM=10):
+    """
+    :param sequence: sequence of oligo
+    :param min_TM: minimum melting temp, default 37
+    :param max_HTM: maximum hairpin melting temp, default 35
+    :param min_diff_TM: minimum difference between melting temp and hairpin melting temp, default 10
+    :return: true to filter out line, false to keep
+    """
     primer3ft = False
 
-    tm = primer3.calcTm(sequence)
+    # Get sequence from line passed to function
+    mapinfo = line.split('\t')
+    sequence = mapinfo[9]
 
-    htm = primer3.calcHairpinTm(sequence)
+    # Calculate
+    TM = primer3.calcTm(sequence)
+    HTM = primer3.calcHairpinTm(sequence)
 
-    ## If melting temperature is too low, filter out
-    if tm < mintm:
+    # If melting temperature is too low, filter out
+    if TM < min_TM:
         primer3ft = True
 
-    ## If hairpin melting temperature is too high, filter out
-    if htm > maxhtm:
+    # If hairpin melting temperature is too high, filter out
+    if HTM > max_TM:
         primer3ft = True
 
-    ## If melting temperature and hairpin melting temperature
-    ## are too close together, filter out
-    if (tm-htm) < dtm:
+    # If melting temperature and hairpin melting temperature
+    # are too close together, filter out
+    if (TM - HTM) < min_diff_TM:
         primer3ft = True
 
-    # print(sequence, tm, htm, dtm)
+    # print(sequence, TM, HTM, dtm)
 
     return primer3ft
 
@@ -113,13 +126,17 @@ def primer3_filter(sequence, mintm=37, maxhtm=35, dtm=10):
 
 if __name__ == '__main__':
 
-    # # Read arguments (comment out to hard-code values)
-    # source_name = sys.argv[1]
-    # output_name = sys.argv[2]
+    # Read arguments from command line
+    try:
+        source_name = sys.argv[1]
+        output_name = sys.argv[2]
+        rejected_name = sys.argv[3]
 
-    # Hard-code file names (comment out to accept as argument)
-    source_name = "tinymap.sam"
-    output_name = "test_output.sam"
+    # Use hard-codes file names if arguments not given
+    except IndexError:
+        source_name = "tinymap.sam"
+        output_name = "/dev/stdout"
+        rejected_name = "test_rejects.sam"
 
     # Open source file in read-only mode
     source = open(source_name, 'r')
@@ -128,22 +145,21 @@ if __name__ == '__main__':
 
     # Set up file output
     output = open(output_name, 'w')
+    rejected = open(rejected_name, 'w')
 
-    ## Iterate over lines in sam file passed to program
+    # Iterate over lines in sam file passed to program
     for line in source.readlines():
 
         # Print headers without touching them
         if isheader(line):
-            print(line.rstrip('\n'))
+            output.write(line)
             continue
 
         elif bwafilter(line, 45, 31):
-            print("We don't like this sequence:")
-            print(line.rstrip('\n'))
+            rejected.write(line.rstrip('\n') + " (bwafilter)\n")
 
         else:
-            print("We like this sequence:")
-            print(line.rstrip('\n'))
+            output.write(line)
 
 
     # Close file
