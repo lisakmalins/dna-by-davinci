@@ -108,38 +108,40 @@ def primer3_filter(sequence, mintm=37, maxhtm=35, dtm=10):
 
 #-------------------main-----------------------
 
-# # Read arguments (comment out to hard-code values)
-# source_name = sys.argv[1]
-# output_name = sys.argv[2]
+if __name__ == '__main__':
 
-# Hard-code file names (comment out to accept as argument)
-source_name = "tinymap.sam"
-output_name = "test_output.sam"
+    # # Read arguments (comment out to hard-code values)
+    # source_name = sys.argv[1]
+    # output_name = sys.argv[2]
 
-# Open source file in read-only mode
-source = open(source_name, 'r')
-if source.closed:
-    sys.exit("File open unsuccessful")
+    # Hard-code file names (comment out to accept as argument)
+    source_name = "tinymap.sam"
+    output_name = "test_output.sam"
 
-# Set up file output
-output = open(output_name, 'w')
+    # Open source file in read-only mode
+    source = open(source_name, 'r')
+    if source.closed:
+        sys.exit("File open unsuccessful")
 
-## Iterate over lines in sam file passed to program
-for line in source.readlines():
+    # Set up file output
+    output = open(output_name, 'w')
 
-    # Print headers without touching them
-    if isheader(line):
-        print(line.rstrip('\n'))
-        continue
+    ## Iterate over lines in sam file passed to program
+    for line in source.readlines():
 
-    elif bwafilter(line, 45, 31):
-        print("We don't like this sequence:")
-        print(line.rstrip('\n'))
+        # Print headers without touching them
+        if isheader(line):
+            print(line.rstrip('\n'))
+            continue
 
-    else:
-        print("We like this sequence:")
-        print(line.rstrip('\n'))
+        elif bwafilter(line, 45, 31):
+            print("We don't like this sequence:")
+            print(line.rstrip('\n'))
+
+        else:
+            print("We like this sequence:")
+            print(line.rstrip('\n'))
 
 
-# Close file
-source.close()
+    # Close file
+    source.close()
