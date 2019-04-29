@@ -9,7 +9,10 @@ Based on bwa.py and primer3_filter.py from Chorus2 by zhangtaolab on GitHub.
 
 import sys
 import re
-import primer3
+try:
+    import primer3
+except ImportError:
+    pass
 
 # Find header lines and just print them
 def isheader(line):
