@@ -19,8 +19,6 @@ python3 TestPrimer3.py test_rejects_p3only.sam /dev/stdout
 
 import sys
 import primer3
-sys.path.append('../')
-from FilterOligos import isheader
 
 # Convert true and false to :D and :(
 def smiley(bool):
@@ -38,7 +36,7 @@ def setupio():
 
     # Use hard-codes file names if arguments not given
     except IndexError:
-        source_name = "Test_Primer3/test_rejects_p3only.sam"
+        source_name = "test_rejects_p3only.sam"
         output_name = "/dev/stdout"
 
     # Open source file in read-only mode
@@ -57,7 +55,7 @@ source, output = setupio()
 # Iterate over lines in sam file passed to program
 for line in source.readlines():
     # Skip headers
-    if isheader(line):
+    if line[0] == '@':
         continue
 
     # Get sequence from sam file

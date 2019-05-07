@@ -6,11 +6,12 @@
 Checks for repeats in a sam file.
 Accepts source file as command-line argument.
 Prints names and locations of repeated sequences or "No repeats found".
+
+Example command:
+python3 CheckForRepeats.py filename.sam
 """
 
 import sys
-sys.path.append('../')
-from FilterOligos import isheader
 
 # Read arguments (comment out to hard-code values)
 source_name = sys.argv[1]
@@ -33,7 +34,7 @@ repeats_found = 0
 
 for line in source.readlines():
     # Skip headers
-    if isheader(line):
+    if line[0] == '@':
         continue
 
     # Grab sequence ID
