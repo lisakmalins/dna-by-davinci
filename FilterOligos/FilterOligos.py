@@ -11,21 +11,11 @@ python3 FilterOligos.py unfiltered.sam filtered.sam
 """
 
 import sys
-import re
 try:
     import primer3
 except ImportError:
     print("Primer3 not installed")
     exit(1)
-
-# Find header lines and just print them
-def isheader(line):
-    # TODO can we not compile this every time?
-    headerpat = re.compile('^@')
-    if re.search(headerpat, line):
-        return True
-    else:
-        return False
 
 # Filter out sequences with less than 70% homology
 def bwa_filter(line, min_AS, max_XS):
@@ -36,32 +26,27 @@ def bwa_filter(line, min_AS, max_XS):
     :return: true to filter out line, false to keep
     """
 
-    # Generate patterns that will be used to search for
-    # alignment scores (AS) and suboptimal alignment scores (XS)
-    # TODO can we not compile this every time?
-    AS_pat = re.compile('AS:i:(\d*)')
-    XS_pat = re.compile('XS:i:(\d*)')
+    splitline = line.split('\t')
+    try:
+        AS_block = splitline[-2]
+        XS_block = splitline[-1]
+        assert AS_block[:5] == "AS:i:" and XS_block[:5] == "XS:i:" , "AS and XS not last two blocks"
+    except AssertionError:
+        for b in splitline:
+            if b[:5] == "AS:i:":
+                AS_block = b
+            elif b[:5] == "XS:i:":
+                XS_block = b
 
-    # Search for an alignment score and a suboptimal alignment score
-    # If found, save as match object (see re documentation)
-    AS_match = re.search(AS_pat, line)
-    XS_match = re.search(XS_pat, line)
+        try:
+            assert AS_block[:5] == "AS:i:" and XS_block[:5] == "XS:i:" , "AS and XS not last two blocks"
+            # print("Catastrophe avoided (last item was " + splitline[-1].rstrip('\n') + ")")
+        except AssertionError:
+            print("AS and XS not found in following line:")
+            print(line)
 
-
-    # If an alignment score and a suboptimal alignment score
-    # are found, grab the scores and save for comparison to minimum and maximum.
-    # If either score isn't found, return true (ignore this line)
-
-    if AS_match:
-        AS_score = int(AS_match.group(1))
-    else:
-        return True
-
-    if XS_match:
-        XS_score = int(XS_match.group(1))
-    else:
-        return True
-
+    AS_score = int(AS_block[5:])
+    XS_score = int(XS_block[5:])
 
     # If the alignment score is less than the minimum
     # or the suboptimal alignment score is greater than the maximum,
@@ -83,7 +68,6 @@ def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
     :param min_diff_TM: minimum difference between melting temp and hairpin melting temp, default 10
     :return: true to filter out line, false to keep
     """
-    primer3ft = False
 
     # Get sequence from line passed to function
     mapinfo = line.split('\t')
@@ -95,18 +79,19 @@ def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
 
     # If melting temperature is too low, filter out
     if TM < min_TM:
-        primer3ft = True
+        return True
 
     # If hairpin melting temperature is too high, filter out
-    if HTM > max_HTM:
-        primer3ft = True
+    elif HTM > max_HTM:
+        return True
 
     # If melting temperature and hairpin melting temperature
     # are too close together, filter out
-    if (TM - HTM) < min_diff_TM:
-        primer3ft = True
+    elif (TM - HTM) < min_diff_TM:
+        return True
 
-    return primer3ft
+    else:
+        return False
 
 # Set up source and output files (returns tuple of file objects)
 def setupio():
@@ -118,11 +103,11 @@ def setupio():
 
     # Use hard-codes file names if arguments not given
     except IndexError:
-        source_name = "dungeonmap.sam"
-        output_name = "dungeonmap_output.sam"
-        # rejected_name = "dungeonmap_rejects.sam"
-        # rejected_b_name = "dungeonmap_rejects_b.sam"
-        # rejected_p_name = "dungeonmap_rejects_p.sam"
+        source_name = "monkeywrench.sam"
+        output_name = "dungeonmap_output2.sam"
+        # rejected_name = "dungeonmap_rejects2.sam"
+        # rejected_b_name = "dungeonmap_rejects_b2.sam"
+        # rejected_p_name = "dungeonmap_rejects_p2.sam"
 
     # Open source file in read-only mode
     source = open(source_name, 'r')
@@ -145,11 +130,11 @@ if __name__ == '__main__':
     source, output = setupio()
 
 
-# Iterate over lines in sam file passed to program
+    # Iterate over lines in sam file passed to program
     for line in source.readlines():
 
         # Print headers without touching them
-        if isheader(line):
+        if line[0] == '@':
             output.write(line)
             continue
 
