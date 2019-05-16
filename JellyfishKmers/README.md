@@ -1,9 +1,9 @@
-load-kmer-dict.py reads k-mers and counts from Jellyfish dump file into a dictionary in order to measure how much memory is required to hold them.
+LoadKmerDict.py reads k-mers and counts from Jellyfish dump file into a dictionary in order to measure how much memory is required to hold them.
 
-dump100.fa is a short jellyfish dump file for testing.
+dump100.fa is a tiny Jellyfish dump file for testing. It is the first 100 lines of a real Jellyfish dump file for maize.
 
 From python shell:
 
-`sourcename = "{filename.fa}"`
+`dumpfile = "{filename.fa}"`
 
-`exec(open("load-kmer-dict.py").read())`
+`exec(open("LoadKmerDict.py").read())`
