@@ -57,7 +57,7 @@ try:
 
         # If there is an entry for level1 but not level2
         elif not level2 in counts[level1]:
-            counts[level1][level2] = {seq, count}
+            counts[level1][level2] = {seq: count}
 
         # If there is an entry for level1 and level2
         elif not seq in counts[level1][level2]:
