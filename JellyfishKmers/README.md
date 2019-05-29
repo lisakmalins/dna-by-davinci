@@ -20,16 +20,24 @@ counts['{first 6 letters}']['{first 12 letters}']['{all 17 letters}']
 ```
 
 ## CalcKmerScores.py
-Calculates k-mer scores for 45-mers using nested dictionary
-of 17-mers and counts loaded into memory by `LoadKmerDict.py`.
+Calculates k-mer scores for 45-mers using nested dictionary of 17-mers and counts loaded into memory by `LoadKmerDict.py`.
+
+This program is designed to run in interactive mode, it can't accept filenames as arguments. Instead, the source file is set with the variable oligofile (to read/write in fasta format) or samfile (to read/write in sam format).
 
 From python shell:
 ```
-# Load k-mer dictionary in to memory
+# Load k-mer scores from Jellyfish dump
 dumpfile = "{filename.fa}"
 exec(open("LoadKmerDict.py").read())
-# Calculate k-mer scores
+
+# Read k-mers from fasta or sam file (choose one)
 oligofile = "{filename.fa}"
+samfile = "{filename.sam}"
+
+# Specify output filename (if none provided, defaults to standard out)
+outputfile = "{filename}"
+
+# Calculate k-mer scores
 exec(open("CalcKmerScores.py").read())
 ```
 
