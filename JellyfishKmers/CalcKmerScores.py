@@ -103,7 +103,7 @@ def CalcFromSam(inputname, outputname):
                 continue
 
         # Write line with k-mer score appended
-        output.write(line.rstrip('\n') + "\tKS:" + str(score) + "\n")
+        output.write(line.rstrip('\n') + "\tKS:i:" + str(score) + "\n")
 
         line = source.readline()
 
