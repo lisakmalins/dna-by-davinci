@@ -37,6 +37,8 @@ class NoOutputError(NameError):
     pass
 class ScriptModeError(Exception):
     pass
+class NoDictionaryError(Exception):
+    pass
 
 
 def Query(seq):
@@ -171,11 +173,15 @@ try:
     if sys.argv[0] == "CalcKmerScores.py":
         raise ScriptModeError
 
+    # Make sure k-mer dictonary is loaded
+    if not 'counts' in vars():
+        raise NoDictionaryError
+
     if not 'outputfile' in vars():
         raise NoOutputError
     if not 'logfile' in vars():
         logfile = ""
-        
+
     # Decide whether to use sam or fasta based on which variable is defined
     # Note: This program doesn't read anything from Jellyfish dump;
     # Passing Jellyfish dump filename to functions is solely for logging output
@@ -185,6 +191,24 @@ try:
         CalcFromFasta(oligofile, outputfile, dumpfile, logfile)
     else:
         raise NoInputError
+
+except NoDictionaryError:
+    print("Cannot calculate k-mer scores because k-mer dictionary not loaded.\n" + \
+    "Please load the dictionary using the following commands:\n" + \
+    \
+    "dumpfile = \"{filename.fa}\"\n" + \
+    "exec(open(\"LoadKmerDict.py\").read())\n" + \
+    \
+    "If you would like to read and write in fasta format, " + \
+    "please set source filename as follows:\n" + \
+    "oligofile = \"{filename.fa}\"\n" + \
+    \
+    "If you would like to read and write in sam format, " + \
+    "please set source filename as follows:\n" + \
+    "samfile = \"{filename.sam}\"\n" + \
+    \
+    "Please set output filename as follows:\n" + \
+    "outputfile = \"{filename}\"\n")
 
 except ScriptModeError:
     print("You ran CalcKmerScores.py in script mode.\n" + \
