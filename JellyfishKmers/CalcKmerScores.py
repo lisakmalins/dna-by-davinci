@@ -17,12 +17,21 @@ exec(open("LoadKmerDict.py").read())
 oligofile = "{filename.fa}"
 samfile = "{filename.sam}"
 
-# Specify output filename (if none provided, defaults to standard out)
+# Specify output filename
 outputfile = "{filename}"
+
+# Optional: Specify log filename (if none provided,
+  defaults to output filename but with .log extension)
+logfile = "{filename}"
 
 # Calculate k-mer scores
 exec(open("CalcKmerScores.py").read())
 """
+
+class NoInputError(NameError):
+    pass
+class NoOutputError(NameError):
+    pass
 
 
 def Query(seq):
@@ -31,10 +40,28 @@ def Query(seq):
     count = counts[level1][level2][seq]
     return count
 
-def CalcFromFasta(inputname, outputname):
+def CalcFromFasta(oligoname, outputname, dumpname, logname):
     # Setup IO
-    source = open(inputname, 'r')
+    source = open(oligoname, 'r')
     output = open(outputname, 'w')
+
+    # Setup log file
+    # If user specified log filename, use that
+    if logname:
+        pass
+    # If printing output to screen, use generic log name
+    elif outputname == "/dev/stdout":
+        logname = "kmerscores.log"
+    # Default: Same name as output file but with .log extension
+    else:
+        logname = outputname.rstrip(".fa") + ".log"
+    log = open(logname, 'w')
+
+    # Begin log file with context
+    log.write("Log file for CalcKmerScores.py\n")
+    log.write("Dictionary loaded from jellyfish dump file = " + dumpname + "\n")
+    log.write("45-mer source file = " + oligoname + "\n")
+    log.write("Output file of 45-mers and k-mer scores = " + outputname + "\n")
 
     # Read 45-mers and calculate k-mer scores
     header = source.readline().rstrip('\n')
@@ -58,9 +85,10 @@ def CalcFromFasta(inputname, outputname):
                 count = Query(seq)
                 score += int(count)
 
-            # If 17-mer not found in dictionary, skip it
+            # If 17-mer not found in dictionary, note in log and skip it
             except:
-                print("No entry found for " + seq)
+                log.write("No dictionary entry for " + seq + \
+                " from source oligo " + header + "\n")
                 continue
 
         output.write(header + " " + str(score) + "\n")
@@ -68,11 +96,30 @@ def CalcFromFasta(inputname, outputname):
         header = source.readline().rstrip('\n')
 
     print("Finished writing k-mers and scores in fasta format to " + outputname)
+    print("Log written to " + logname)
 
-def CalcFromSam(inputname, outputname):
+def CalcFromSam(samname, outputname, dumpname, logname):
     # Setup IO
-    source = open(inputname, 'r')
+    source = open(samname, 'r')
     output = open(outputname, 'w')
+
+    # Setup log file
+    # If user specified log filename, use that
+    if logname:
+        pass
+    # If printing output to screen, use generic log name
+    elif outputname == "/dev/stdout":
+        logname = "kmerscores.log"
+    # Default: Same name as output file but with .log extension
+    else:
+        logname = outputname.rstrip(".sam") + ".log"
+    log = open(logname, 'w')
+
+    # Begin log file with context
+    log.write("Log file for CalcKmerScores.py\n")
+    log.write("Dictionary loaded from jellyfish dump file = " + dumpname + "\n")
+    log.write("Sam source file = " + samname + "\n")
+    log.write("Output file of 45-mers and k-mer scores = " + outputname + "\n")
 
     # Read 45-mers and calculate k-mer scores
     line = source.readline()
@@ -97,9 +144,10 @@ def CalcFromSam(inputname, outputname):
                 count = Query(seq)
                 score += int(count)
 
-            # If 17-mer not found in dictionary, skip it
+            # If 17-mer not found in dictionary, note in log and skip it
             except:
-                print("No entry found for " + seq)
+                log.write("No dictionary entry for " + seq + \
+                " from source oligo " + splitline[0] + "\n")
                 continue
 
         # Write line with k-mer score appended
@@ -108,34 +156,40 @@ def CalcFromSam(inputname, outputname):
         line = source.readline()
 
     print("Finished writing k-mers and scores in sam format to " + outputname)
+    print("Log written to " + logname)
 
 
 # ----------------main-------------------
 
 try:
-    # If output file not specified, print to screen
     if not 'outputfile' in vars():
-        outputfile = "/dev/stdout"
-
+        raise NoOutputError
+    if not 'logfile' in vars():
+        logfile = ""
     # Decide whether to use sam or fasta based on which variable is defined
+    # Note: This program doesn't read anything from Jellyfish dump;
+    # Passing Jellyfish dump filename to functions is solely for logging output
     if 'samfile' in vars():
-        CalcFromSam(samfile, outputfile)
+        CalcFromSam(samfile, outputfile, dumpfile, logfile)
     elif 'oligofile' in vars():
-        CalcFromFasta(oligofile, outputfile)
+        CalcFromFasta(oligofile, outputfile, dumpfile, logfile)
     else:
-        raise NameError
+        raise NoInputError
 
+except NoOutputError:
+    print("No output file specified.")
+    print("Please set output filename as follows and try again:\n" + \
+    "outputfile = \"{filename}\"")
 
-except NameError:
-    print("No input and/or output file specified.")
+except NoInputError:
+    print("No input file specified.")
     print("If you would like to read and write in fasta format, " + \
     "please set filename as follows and try again:\n" + \
     "oligofile = \"{filename.fa}\"")
     print("If you would like to read and write in sam format, " + \
     "please set filename as follows and try again:\n" + \
     "samfile = \"{filename.sam}\"")
-    # print("Please set output filename as follows and try again:\n" + \
-    # "outputfile = \"{filename}\"")
+
 except FileNotFoundError:
     if 'oligofile' in vars():
         print("File " + oligofile + " not found\n" + \

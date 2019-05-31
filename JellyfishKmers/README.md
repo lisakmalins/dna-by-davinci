@@ -34,14 +34,18 @@ exec(open("LoadKmerDict.py").read())
 oligofile = "{filename.fa}"
 samfile = "{filename.sam}"
 
-# Specify output filename (if none provided, defaults to standard out)
+# Specify output filename
 outputfile = "{filename}"
+
+# Optional: Specify log filename (if none provided, defaults to output filename but with .log extension)
+logfile = "{filename}"
 
 # Calculate k-mer scores
 exec(open("CalcKmerScores.py").read())
 ```
 
 ## Test files
-* `dump100.fa` is a tiny Jellyfish dump file for testing. It is the first 100 lines of a real Jellyfish dump file of 17-mers from maize.
+* `dump100.fa` is a tiny Jellyfish dump file for testing. It is the first 100 lines of a real Jellyfish dump file of 17-mers from maize. It does not match up with `fake45mers.fa` or `fakemap.sam` so it is useful to check log output for 17-mers missing from dictionary.
 * `fakedump.fa` is an artificial Jellyfish dump file with 17-mers containing only contiguous A's and G's.
-* `fake45mers.fa` is an artificial file of 45-mers containing only contiguous A's and G's. Every 17-mer in `fake45mers.fa` can be found in `fakedump.fa`.
+* `fake45mers.fa` is an artificial fasta file of 45-mers containing only contiguous A's and G's. Every 17-mer in `fake45mers.fa` can be found in `fakedump.fa`.
+* `fakemap.sam` is an artificial sam file of 45-mers containing only contiguous A's and G's. Every 17-mer in `fake45mers.sam` can be found in `fakedump.fa`.
