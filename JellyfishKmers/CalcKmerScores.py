@@ -28,9 +28,14 @@ logfile = "{filename}"
 exec(open("CalcKmerScores.py").read())
 """
 
+import sys
+
+# Custom exceptions
 class NoInputError(NameError):
     pass
 class NoOutputError(NameError):
+    pass
+class ScriptModeError(Exception):
     pass
 
 
@@ -162,10 +167,15 @@ def CalcFromSam(samname, outputname, dumpname, logname):
 # ----------------main-------------------
 
 try:
+    # Make sure script is being run in interactive mode
+    if sys.argv[0] == "CalcKmerScores.py":
+        raise ScriptModeError
+
     if not 'outputfile' in vars():
         raise NoOutputError
     if not 'logfile' in vars():
         logfile = ""
+        
     # Decide whether to use sam or fasta based on which variable is defined
     # Note: This program doesn't read anything from Jellyfish dump;
     # Passing Jellyfish dump filename to functions is solely for logging output
@@ -175,6 +185,25 @@ try:
         CalcFromFasta(oligofile, outputfile, dumpfile, logfile)
     else:
         raise NoInputError
+
+except ScriptModeError:
+    print("You ran CalcKmerScores.py in script mode.\n" + \
+    "Please open the python shell and rerun in interactive mode " + \
+    "using the following commands:\n" + \
+    \
+    "dumpfile = \"{filename.fa}\"\n" + \
+    "exec(open(\"LoadKmerDict.py\").read())\n" + \
+    \
+    "If you would like to read and write in fasta format, " + \
+    "please set source filename as follows:\n" + \
+    "oligofile = \"{filename.fa}\"\n" + \
+    \
+    "If you would like to read and write in sam format, " + \
+    "please set source filename as follows:\n" + \
+    "samfile = \"{filename.sam}\"\n" + \
+    \
+    "Please set output filename as follows:\n" + \
+    "outputfile = \"{filename}\"\n")
 
 except NoOutputError:
     print("No output file specified.")
