@@ -26,9 +26,11 @@ except:
     exit("File " + str(filename) + " not found")
 
 if len(sys.argv) == 3:
+    # Use provided output file name if given
     outputname = sys.argv[2]
 else:
-    outputname = filename.split(".")[0] + "_histo.txt"
+    # Otherwise, transform input file name
+    outputname = filename.rsplit(".", 1)[0] + "_histo.txt"
 output = open(outputname, 'w')
 
 print("Reading scores from", filename)
@@ -37,7 +39,7 @@ print("Score histogram will be written to", outputname)
 
 # Get length of file for progress output
 source.seek(0,2)
-filelength = source.tell()
+filelength = float(source.tell())
 source.seek(0)
 percent = 10
 
