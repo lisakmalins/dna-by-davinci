@@ -73,15 +73,14 @@ class Kmer:
         # Fetch next s letters, ignoring spaces and newlines
         while len(nextLetters) < self.s:
             nextChar = self.fo.read(1)
-
-            # If next character exists and is a letter, add to nextLetters
-            # If next character is >, set eos = true and return to main
             if nextChar:
+                # If next character is a letter, add to nextLetters
                 if nextChar.isalpha():
                     nextLetters += nextChar
                     self.index += 1
-
+                # If next character is >, set eos = true and return to main
                 elif nextChar == ">":
+                    # Backspace file object's counter so header isn't skipped
                     self.fo.seek(self.counter, 0)
                     self.eos = True
                     return
