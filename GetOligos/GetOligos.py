@@ -18,6 +18,9 @@ Header class will need to be remade for different assemblies
 Header class lets this file know whether to get k-mers
     out of a section or skip it.
 
+Usage:
+python GetOligos.py {genome filename} {mer size} {step size} {output filename}
+
 Example command:
 python GetOligos.py agra_cadabra_genome.fa 45 3 agra_cadabra_45mers.fa
 """
@@ -64,15 +67,24 @@ def FindNextHeader(fo):
 #-------------------main-----------------------
 
 # Read arguments
-source_name = sys.argv[1]
-mer_size = int(sys.argv[2])
-step_size = int(sys.argv[3])
-output_name = sys.argv[4]
+try:
+    source_name = sys.argv[1]
+    mer_size = int(sys.argv[2])
+    step_size = int(sys.argv[3])
+    output_name = sys.argv[4]
+    if mer_size <= 0 or step_size <= 0 or step_size > mer_size:
+        raise ValueError
+except IndexError:
+    exit("Usage: python GetOligos.py {genome filename} {mer size} {step size} {output filename}")
+except ValueError:
+    exit("Usage: python GetOligos.py {genome filename} {mer size} {step size} {output filename}")
+
 
 # Open source file in read-only mode
-source = open(source_name, "r")
-if source.closed:
-    sys.exit("File open unsuccessful")
+try:
+    source = open(source_name, "r")
+except FileNotFoundError:
+    exit("File " + sys.argv[1] + " not found.")
 
 # Set up file output
 output = open(output_name, "w")
