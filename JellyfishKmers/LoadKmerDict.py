@@ -12,6 +12,7 @@ exec(open("LoadKmerDict.py").read())
 """
 
 import sys
+from GetSizeOfDict import sizeofdict
 
 try:
     # Make sure script is being run in interactive mode
@@ -68,28 +69,38 @@ try:
             raise AssertionError("Duplicate entry found for sequence " \
             + seq + " in " + dumpfile)
 
-        # # Watch size grow
-        # if cur_size != sys.getsizeof(counts):
-        #     cur_size = sys.getsizeof(counts)
-        #     print("Number of entries = " + str(num_entries) + \
-        #     " size in memory = " + str(sys.getsizeof(counts)))
+        num_entries += 1
+
+        # Watch size grow
+        # if cur_size != sizeofdict(counts):
+        #     cur_size = sizeofdict(counts)
+        #     print("Number of entries =", num_entries, \
+        #     "\ttop level size =", sys.getsizeof(counts), \
+        #     "\ttotal size =", cur_size)
 
         line = source.readline()
-        num_entries += 1
+
 
     # Remove dummy entry
     counts.pop("")
 
+
     # Output size of dictionary and further commands
-    print(str(num_entries) + " kmers and counts read from file " + dumpfile)
-    print("Current size of dictionary in memory: " + str(sys.getsizeof(counts)))
+    print("\n" + str(num_entries) + " kmers and counts read from file " + dumpfile)
+
+    print("Current size of dictionary in memory: ")
+    cur_size = sizeofdict(counts)
+    print("Number of entries =", num_entries, \
+    "\ttop level size =", sys.getsizeof(counts), \
+    "\ttotal size =", cur_size)
+
     print("Further commands: ")
     print("\t# Print all entries in dictionary")
     print("\tcounts")
     print("\t# Output number of entries in dictionary")
     print("\tnum_entries")
     print("\t# Output size of dictionary in bytes")
-    print("\tsys.getsizeof(counts)")
+    print("\tcur_size")
     print("\t# Query count for a particular sequence")
     print("\tcounts['{first 6 letters}']['{first 12 letters}']" + \
     "['{all 17 letters}']")
