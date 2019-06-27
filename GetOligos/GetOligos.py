@@ -58,8 +58,10 @@ def FindNextHeader(fo):
         # If the next line is not a header, read the next line and continue loop
         nextLine = fo.readline()
 
-    # End program when end of file reached
-    sys.exit(0)
+    # End program if end of file reached
+    fo.close()
+    sys.exit("Finished writing " + str(mer_size) + "-mers to " + output_name)
+
 
 
 
@@ -89,11 +91,25 @@ except FileNotFoundError:
 # Set up file output
 output = open(output_name, "w")
 
+# Get length of file for progress output
+print("Determining file length of " + source_name + "...")
+source.seek(0,2)
+filelength = float(source.tell())
+source.seek(0)
+percent = 10
+
+print("Reading " + str(mer_size) + "-mers with step size of " + str(step_size) + \
+" from " + source_name + " and writing to " + output_name)
+
 # Create Kmer object
 currentKmer = Kmer(source, mer_size, step_size)
 
 # Loop through entire file
 while not currentKmer.eof:
+    # Output progress message
+    if (source.tell() / filelength * 100) > percent:
+        print("Read progress: " + str(percent) + "%")
+        percent += 10
 
     # Find next header and start a new k-mer
     nextHeader = FindNextHeader(source)
@@ -106,3 +122,4 @@ while not currentKmer.eof:
 
 # Close file
 source.close()
+print("Finished writing " + str(mer_size) + "-mers to " + output_name)
