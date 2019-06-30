@@ -29,7 +29,7 @@ rule count_pass2:
         "data/kmer-counts/{read}_17mer_counts.jf"
     threads: 16
     shell:
-        "jellyfish count -m 17 -C -s 3G -t 16 -bc {input.bc} -o {output} {input.fastq}"
+        "jellyfish count -m 17 -C -s 3G -t 16 --bc {input.bc} -o {output} {input.fastq}"
 
 rule count_pass1:
     input:
