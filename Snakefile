@@ -3,13 +3,13 @@ READS=["85seed_42xsub_SRR2960981"]
 rule all:
     input:
         expand("data/kmer-counts/{read}_17mer_histo.txt", read=READS),
-        expand("data/kmer-counts/{read}_dumps.fa", read=READS)
+        expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS)
 
 rule dump:
     input:
         "data/kmer-counts/{read}_17mer_counts.jf"
     output:
-        "data/kmer-counts/{read}_dumps.fa"
+        "data/kmer-counts/{read}_17mer_dumps.fa"
     shell:
         "jellyfish dump {input} > {output}"
 
