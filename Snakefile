@@ -19,7 +19,7 @@ rule histo:
     output:
         "data/kmer-counts/{read}_17mer_histo.txt"
     shell:
-        "jellyfish histo {input}"
+        "jellyfish histo {input} > {output}"
 
 rule count_pass2:
     input:
