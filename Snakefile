@@ -3,17 +3,17 @@ READS=["85seed_42xsub_SRR2960981"]
 rule targets:
     input:
         expand("data/kmer-counts/{read}_17mer_histo.txt", read=READS),
-        expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS)
-        "zmays_AGPv4_map_filtered_42x_scores_histo.sam"
+        expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS),
+        "data/maps/zmays_AGPv4_map_filtered_42x_scores_histo.sam"
 
 #TODO reformat with wildcards
 rule score_histogram:
     input:
-        "zmays_AGPv4_map_filtered_42x_scores.sam"
+        "data/maps/zmays_AGPv4_map_filtered_42x_scores.sam"
     output:
-        "zmays_AGPv4_map_filtered_42x_scores_histo.sam"
+        "data/maps/zmays_AGPv4_map_filtered_42x_scores_histo.sam"
     shell:
-        "python3 ScoresHistogram.py {input} {output}"
+        "python3 JellyfishKmers/ScoresHistogram.py {input} {output}"
 
 #TODO redo this step in C++ or python script mdoe
 # rule calc_scores:
