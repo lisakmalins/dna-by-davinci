@@ -1,9 +1,33 @@
 READS=["85seed_42xsub_SRR2960981"]
 
-rule all:
+rule targets:
     input:
         expand("data/kmer-counts/{read}_17mer_histo.txt", read=READS),
         expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS)
+        "zmays_AGPv4_map_filtered_42x_scores_histo.sam"
+
+#TODO reformat with wildcards
+rule score_histogram:
+    input:
+        "zmays_AGPv4_map_filtered_42x_scores.sam"
+    output:
+        "zmays_AGPv4_map_filtered_42x_scores_histo.sam"
+    shell:
+        "python3 ScoresHistogram.py {input} {output}"
+
+#TODO redo this step in C++ or python script mdoe
+# rule calc_scores:
+
+# rule binned_counts:
+#     input:
+#     output:
+#     shell:
+#         "grep -m 1 -v "^@" -n zmays_AGPv4_map.sam | cut -f1 -d:"
+#
+# rule make_bins:
+#     input:
+#     output:
+#     shell:
 
 rule dump:
     input:
