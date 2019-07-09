@@ -12,6 +12,7 @@ exec(open("LoadKmerDict.py").read())
 
 from NestedKmerDict import NestedKmerDict
 nkd = NestedKmerDict()
+nkd.Populate("fakedump.fa")
 """
 
 import sys
@@ -77,9 +78,12 @@ class NestedKmerDict():
 
                 line = source.readline()
 
-            # Close source file and remove dummy entry
+            # Close source file and remove dummy entry if necessary
             source.close()
-            self.counts.pop("")
+            try:
+                self.counts.pop("")
+            except:
+                pass
 
             # Output size of dictionary
             print(str(self.num_entries) + " kmers and counts read from file " + dumpfile)
@@ -94,6 +98,45 @@ class NestedKmerDict():
                 print("File " + dumpfile + " not found")
             print("Please set filename as follows and try again:\n" + \
             "dumpfile = \"{filename.fa}\"")
+
+    def RC(self, seq):
+        rc = ""
+        for letter in seq:
+            if letter == 'A':
+                rc += 'T'
+            elif letter == 'C':
+                rc += 'G'
+            elif letter == 'G':
+                rc += 'C'
+            elif letter == 'T':
+                rc += 'A'
+            else:
+                print("LOL that's literally not in my vocabulary")
+        return rc
+
+    def Query(self, seq):
+        matches = 0
+        try:
+            fcount = self.counts[seq[0:6]][seq[0:12]][seq]
+            matches += 1
+        except KeyError:
+            fcount = 0
+        try:
+            rc = self.RC(seq)
+            rcount = self.counts[rc[0:6]][rc[0:12]][rc]
+            matches += 1
+        except KeyError:
+            return self.counts[seq[0:6]][seq[0:12]][seq]
+        except TypeError:
+            print("Please enter a DNA sequence in quotes")
+
+        if matches == 1:
+            return fcount or rcount
+        elif matches == 2:
+            print("Both " + seq + " and reverse complement " + rc + " found in dictionary")
+        else:
+            print(seq + " not found in dictionary")
+        return
 
 
     def PrintAll(self):
@@ -117,3 +160,12 @@ class NestedKmerDict():
         "['{all 17 letters}']")
         print("# Display this help menu")
         print("Help()")
+
+if __name__ == '__main__':
+    nkd = NestedKmerDict()
+    nkd.Populate("fakedump.fa")
+    print(nkd.Query("AAAAAAAAAAAAAAAAA"))
+    print(nkd.Query("TTTTTTTTTTTTTTTTT"))
+
+    nkd.Populate("monkeywrench.fa")
+    print(nkd.Query("GGGGGGGGGGGGGGGGG"))
