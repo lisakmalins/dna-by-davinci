@@ -11,22 +11,13 @@ If oligos are read from sam, output is also in sam format
     with the score appended as KS:i: tag.
 
 Usage:
-python CalcKmerScores.py dump.fa oligos.fa scores_output.fa
 python CalcKmerScores.py dump.fa oligos.sam scores_output.sam
 """
 
 import sys
 from NestedKmerDict import NestedKmerDict
 
-# Custom exceptions
-class NoInputError(NameError):
-    pass
-class NoOutputError(NameError):
-    pass
-class NoDictionaryError(Exception):
-    pass
-
-# not updated
+# not updated, please skip to CalcFromSam
 def CalcFromFasta(oligos, output, dump, log):
     # Setup nested kmer dictionary
     nkd = NestedKmerDict()
