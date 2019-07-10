@@ -1,18 +1,11 @@
-# 14 May 2019
+# 10 July 2019
 # Lisa Malins
-# LoadKmerDict.py
+# NestedKmerDict.py
 
 """
-Reads k-mers and counts from Jellyfish dump file into a dictionary
-in order to measure how much memory is required to hold them.
-
-From python shell:
-dumpfile = "{filename.fa}"
-exec(open("LoadKmerDict.py").read())
-
-from NestedKmerDict import NestedKmerDict
-nkd = NestedKmerDict()
-nkd.Populate("fakedump.fa")
+Nested k-mer dictionary class which holds 17-mers in 3 levels.
+Reads 17-mers from a Jellyfish dump file.
+Multiple Jellyfish dump files can be read into same dictionary object.
 """
 
 import sys
@@ -24,20 +17,23 @@ class NestedKmerDict():
         self.num_entries = 0
         self.cur_size = 0
 
-    def Populate(self, dumpfile):
+    # Read 17-mers from Jellyfish dump file
+    # Accepts string of filename or file object
+    def Populate(self, source):
         try:
-            # Open file
-            source = open(dumpfile, 'r')
-            print("Reading kmer counts from file " + dumpfile + "...")
+            # If string of filename passed, reassign variable to be file object
+            if isinstance(source, str):
+                source = open(source, 'r')
 
             # Read all k-mers and counts into dictionary
+            print("Reading kmer counts from file " + source.name + "...")
             line = source.readline()
 
             while line:
                 # Error message for unreadable input
                 assert line[0] == ">", \
                 "\nUnable to read k-mers and scores due to unexpected input. " + \
-                "Line was:\n" + line.rstrip('\n') + "\nfrom " + dumpfile
+                "Line was:\n" + line.rstrip('\n') + "\nfrom " + source.name
 
                 # Read count and associated sequence
                 count = line[1:].rstrip('\n')
@@ -65,7 +61,7 @@ class NestedKmerDict():
                 # If entry already exists, raise error (should be no duplicates in file)
                 else:
                     raise AssertionError("Duplicate entry found for sequence " \
-                    + seq + " in " + dumpfile)
+                    + seq + " in " + source.name)
 
                 self.num_entries += 1
 
@@ -86,7 +82,7 @@ class NestedKmerDict():
                 pass
 
             # Output size of dictionary
-            print(str(self.num_entries) + " kmers and counts read from file " + dumpfile)
+            print(str(self.num_entries) + " kmers and counts read from file " + source.name)
 
             # Print help if running in interactive mode
             if not sys.argv[0]:
@@ -94,11 +90,9 @@ class NestedKmerDict():
                 self.Help()
 
         except FileNotFoundError:
-            if dumpfile:
-                print("File " + dumpfile + " not found")
-            print("Please set filename as follows and try again:\n" + \
-            "dumpfile = \"{filename.fa}\"")
+            print("File " + source.name + " not found")
 
+    # Converts sequence to reverse complement
     def RC(self, seq):
         rc = ""
         for letter in seq:
@@ -114,6 +108,7 @@ class NestedKmerDict():
                 print("LOL that's literally not in my vocabulary")
         return rc
 
+    # Finds count for k-mer or its reverse complement
     def Query(self, seq):
         matches = 0
         try:
@@ -161,6 +156,7 @@ class NestedKmerDict():
         print("# Display this help menu")
         print("Help()")
 
+# Demo
 if __name__ == '__main__':
     nkd = NestedKmerDict()
     nkd.Populate("fakedump.fa")

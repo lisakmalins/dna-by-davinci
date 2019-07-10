@@ -1,3 +1,5 @@
+__Under construction__
+
 ## LoadKmerDict.py
 Reads 17-mers and counts from Jellyfish dump file into a nested dictionary. It is designed to be run in interactive mode. After loading the dictionary, you can calculate the size of the dictionary in memory or go on to calculate k-mer scores with the next program.
 

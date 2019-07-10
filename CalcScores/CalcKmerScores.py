@@ -1,67 +1,42 @@
-# 28 May 2019
+# 10 July 2019
 # Lisa Malins
 # CalcKmerScores.py
 
 """
-Calculates k-mer scores for 45-mers using nested dictionary
-of 17-mers and counts loaded in to memory by LoadKmerDict.py.
-Reads and writes in either fasta format or sam format depending
-on whether source filename is set with oligofile or samfile.
+Reads 17-mers and counts from jellyfish dump file into a nested dictionary.
+Then, calculates k-mer scores for 45-mers from either sam file or fasta file.
+If oligos are read from fasta, output is also in fasta format
+    with the score appended to the header comment.
+If oligos are read from sam, output is also in sam format
+    with the score appended as KS:i: tag.
 
-From python shell:
-# Load k-mer scores from Jellyfish dump
-dumpfile = "{filename.fa}"
-exec(open("LoadKmerDict.py").read())
-
-# Read k-mers from fasta or sam file (choose one)
-oligofile = "{filename.fa}"
-samfile = "{filename.sam}"
-
-# Specify output filename
-outputfile = "{filename}"
-
-# Optional: Specify log filename (if none provided,
-  defaults to output filename but with .log extension)
-logfile = "{filename}"
-
-# Calculate k-mer scores
-exec(open("CalcKmerScores.py").read())
+Usage:
+python CalcKmerScores.py dump.fa oligos.fa scores_output.fa
+python CalcKmerScores.py dump.fa oligos.sam scores_output.sam
 """
 
 import sys
+from NestedKmerDict import NestedKmerDict
 
 # Custom exceptions
 class NoInputError(NameError):
     pass
 class NoOutputError(NameError):
     pass
-class ScriptModeError(Exception):
-    pass
 class NoDictionaryError(Exception):
     pass
 
+# not updated
+def CalcFromFasta(oligos, output, dump, log):
+    # Setup nested kmer dictionary
+    nkd = NestedKmerDict()
+    nkd.Populate(dumpname)
 
-def Query(seq):
-    level1 = seq[0:6]
-    level2 = seq[0:12]
-    count = counts[level1][level2][seq]
-    return count
-
-def CalcFromFasta(oligoname, outputname, dumpname, logname):
     # Setup IO
     source = open(oligoname, 'r')
     output = open(outputname, 'w')
 
     # Setup log file
-    # If user specified log filename, use that
-    if logname:
-        pass
-    # If printing output to screen, use generic log name
-    elif outputname == "/dev/stdout":
-        logname = "kmerscores.log"
-    # Default: Same name as output file but with .log extension
-    else:
-        logname = outputname.rstrip(".fa") + ".log"
     log = open(logname, 'w')
 
     # Begin log file with context
@@ -89,7 +64,7 @@ def CalcFromFasta(oligoname, outputname, dumpname, logname):
         for i in range (0, 29):
             try:
                 seq = oligo[i:i+17]
-                count = Query(seq)
+                count = nkd.Query(seq)
                 score += int(count)
 
             # If 17-mer not found in dictionary, note in log and skip it
@@ -105,36 +80,24 @@ def CalcFromFasta(oligoname, outputname, dumpname, logname):
     print("Finished writing k-mers and scores in fasta format to " + outputname)
     print("Log written to " + logname)
 
-def CalcFromSam(samname, outputname, dumpname, logname):
-    # Setup IO
-    source = open(samname, 'r')
-    output = open(outputname, 'w')
-
-    # Setup log file
-    # If user specified log filename, use that
-    if logname:
-        pass
-    # If printing output to screen, use generic log name
-    elif outputname == "/dev/stdout":
-        logname = "kmerscores.log"
-    # Default: Same name as output file but with .log extension
-    else:
-        logname = outputname.rstrip(".sam") + ".log"
-    log = open(logname, 'w')
+def CalcFromSam(oligos, output, dump, log):
+    # Setup nested kmer dictionary
+    nkd = NestedKmerDict()
+    nkd.Populate(dump)
 
     # Begin log file with context
     log.write("Log file for CalcKmerScores.py\n")
-    log.write("Dictionary loaded from jellyfish dump file = " + dumpname + "\n")
-    log.write("Sam source file = " + samname + "\n")
-    log.write("Output file of 45-mers and k-mer scores = " + outputname + "\n")
+    log.write("Dictionary loaded from jellyfish dump file = " + dump.name + "\n")
+    log.write("Sam source file = " + oligos.name + "\n")
+    log.write("Output file of 45-mers and k-mer scores = " + output.name + "\n")
 
     # Read 45-mers and calculate k-mer scores
-    line = source.readline()
+    line = oligos.readline()
     while line:
         # Print headers without touching them
         if line[0] == '@':
             output.write(line)
-            line = source.readline()
+            line = oligos.readline()
             continue
 
         # Split line into components and grab oligo
@@ -148,7 +111,7 @@ def CalcFromSam(samname, outputname, dumpname, logname):
         for i in range (0, 29):
             try:
                 seq = oligo[i:i+17]
-                count = Query(seq)
+                count = nkd.Query(seq)
                 score += int(count)
 
             # If 17-mer not found in dictionary, note in log and skip it
@@ -160,97 +123,44 @@ def CalcFromSam(samname, outputname, dumpname, logname):
         # Write line with k-mer score appended
         output.write(line.rstrip('\n') + "\tKS:i:" + str(score) + "\n")
 
-        line = source.readline()
+        line = oligos.readline()
 
-    print("Finished writing k-mers and scores in sam format to " + outputname)
-    print("Log written to " + logname)
+    print("Finished writing k-mers and scores in sam format to " + output.name)
+    print("Log written to " + log.name)
 
 
 # ----------------main-------------------
 
+if len(sys.argv) < 3 or len(sys.argv) > 4:
+    exit("Usage: {dump input file} {oligo input file} {scores output file}")
+
+# Verify all files found and not garbage before loading dictionary
+# Open jellyfish dump file of 17-mers
 try:
-    # Make sure script is being run in interactive mode
-    if sys.argv[0] == "CalcKmerScores.py":
-        raise ScriptModeError
-
-    # Make sure k-mer dictonary is loaded
-    if not 'counts' in vars():
-        raise NoDictionaryError
-
-    if not 'outputfile' in vars():
-        raise NoOutputError
-    if not 'logfile' in vars():
-        logfile = ""
-
-    # Decide whether to use sam or fasta based on which variable is defined
-    # Note: This program doesn't read anything from Jellyfish dump;
-    # Passing Jellyfish dump filename to functions is solely for logging output
-    if 'samfile' in vars():
-        CalcFromSam(samfile, outputfile, dumpfile, logfile)
-    elif 'oligofile' in vars():
-        CalcFromFasta(oligofile, outputfile, dumpfile, logfile)
-    else:
-        raise NoInputError
-
-except NoDictionaryError:
-    print("Cannot calculate k-mer scores because k-mer dictionary not loaded.\n" + \
-    "Please load the dictionary using the following commands:\n" + \
-    \
-    "dumpfile = \"{filename.fa}\"\n" + \
-    "exec(open(\"LoadKmerDict.py\").read())\n" + \
-    \
-    "If you would like to read and write in fasta format, " + \
-    "please set source filename as follows:\n" + \
-    "oligofile = \"{filename.fa}\"\n" + \
-    \
-    "If you would like to read and write in sam format, " + \
-    "please set source filename as follows:\n" + \
-    "samfile = \"{filename.sam}\"\n" + \
-    \
-    "Please set output filename as follows:\n" + \
-    "outputfile = \"{filename}\"\n")
-
-except ScriptModeError:
-    print("You ran CalcKmerScores.py in script mode.\n" + \
-    "Please open the python shell and rerun in interactive mode " + \
-    "using the following commands:\n" + \
-    \
-    "dumpfile = \"{filename.fa}\"\n" + \
-    "exec(open(\"LoadKmerDict.py\").read())\n" + \
-    \
-    "If you would like to read and write in fasta format, " + \
-    "please set source filename as follows:\n" + \
-    "oligofile = \"{filename.fa}\"\n" + \
-    \
-    "If you would like to read and write in sam format, " + \
-    "please set source filename as follows:\n" + \
-    "samfile = \"{filename.sam}\"\n" + \
-    \
-    "Please set output filename as follows:\n" + \
-    "outputfile = \"{filename}\"\n")
-
-except NoOutputError:
-    print("No output file specified.")
-    print("Please set output filename as follows and try again:\n" + \
-    "outputfile = \"{filename}\"")
-
-except NoInputError:
-    print("No input file specified.")
-    print("If you would like to read and write in fasta format, " + \
-    "please set filename as follows and try again:\n" + \
-    "oligofile = \"{filename.fa}\"")
-    print("If you would like to read and write in sam format, " + \
-    "please set filename as follows and try again:\n" + \
-    "samfile = \"{filename.sam}\"")
-
+    dump = open(sys.argv[1], 'r')
 except FileNotFoundError:
-    if 'oligofile' in vars():
-        print("File " + oligofile + " not found\n" + \
-        "Please set filename as follows and try again:\n" + \
-        "oligofile = \"{filename.fa}\"")
-    elif 'samfile' in vars():
-        print("File " + samfile + " not found\n" + \
-        "Please set filename as follows and try again:\n" + \
-        "samfile = \"{filename.sam}\"")
-    # print("Please set output filename as follows and try again:\n" + \
-    # "outputfile = \"{filename}\"")
+    exit("File " + sys.argv[1] + " not found.")
+
+# Open file of 45-mers
+try:
+    oligos = open(sys.argv[2], 'r')
+except FileNotFoundError:
+    exit("File " + sys.argv[2] + " not found.")
+
+# Open output file
+output = open(sys.argv[3], 'w')
+
+# Open log file
+try:
+    logfile = sys.argv[4]
+except:
+    logfile = output.name.split('.', 1)[0] + ".log"
+log = open(logfile, 'w')
+
+
+if sys.argv[2].split('.')[-1] == "sam":
+    CalcFromSam(oligos, output, dump, log)
+elif sys.argv[2].split('.')[-1][:2] == "fa":
+    CalcFromFasta(oligos, output, dump, log)
+else:
+    exit("Usage: {dump input file} {oligo input file} {scores output file}")
