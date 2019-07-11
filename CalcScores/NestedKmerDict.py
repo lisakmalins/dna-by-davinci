@@ -9,7 +9,6 @@ Multiple Jellyfish dump files can be read into same dictionary object.
 """
 
 import sys
-from GetSizeOfDict import sizeofdict
 from time import ctime
 from time import process_time
 from datetime import timedelta
@@ -92,6 +91,7 @@ class NestedKmerDict():
         print(str(self.num_entries) + " kmers and counts read from file " + source.name)
         log.write("Kmer loading from " + source.name + " completed at time " + ctime() + "\n")
         log.write("Load time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
+        log.write("Total size in memory is " + str(self.Size()) + "\n")
 
         # Print help if running in interactive mode
         if not sys.argv[0]:
@@ -153,14 +153,33 @@ class NestedKmerDict():
             except KeyError:
                 log.write(seq + " not found in dictionary\n")
 
+    def Size(self, sum=0, verbose=False):
+        return self._Size(self.counts, sum, verbose)
+
+    def _Size(self, d, sum=0, verbose=False):
+        # Execute this block for innermost values only
+        # Add size of final value and stop recursion
+        if not isinstance(d, dict):
+            # Add size of final value
+            sum += sys.getsizeof(d)
+            return sum
+
+        # Execute this block for dictionaries
+        # For each item, add size of key and recur on members
+        for item in d:
+            # Add size of string key
+            sum += sys.getsizeof(item)
+            # Recur on members of dict
+            sum = self._Size(d[item], sum)
+
+        # Add size of dictionary
+        sum += sys.getsizeof(d)
+        return sum
 
     def PrintAll(self):
         return self.counts
     def NumEntries(self):
         return self.num_entries
-    def Size(self):
-        cur_size = sizeofdict(self.counts)
-        return cur_size
 
     # Help function designed for interactive mode
     def Help(self):
@@ -171,8 +190,7 @@ class NestedKmerDict():
         print("# Output size of dictionary in bytes")
         print("Size()")
         print("# Query count for a particular sequence")
-        print("counts['{first 6 letters}']['{first 12 letters}']" + \
-        "['{all 17 letters}']")
+        print("Query(sequence)")
         print("# Display this help menu")
         print("Help()")
 
