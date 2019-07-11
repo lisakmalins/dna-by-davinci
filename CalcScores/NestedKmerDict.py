@@ -25,67 +25,63 @@ class NestedKmerDict():
     def Populate(self, source, log=open("/dev/fd/1", 'w')):
         time0 = process_time()
 
-        try:
-            # If string of filename passed, reassign variable to be file object
-            if isinstance(source, str):
-                try:
-                    source = open(source, 'r')
-                except FileNotFoundError:
-                    exit("File " + source.name + " not found")
+        # If string of filename passed, reassign variable to be file object
+        if isinstance(source, str):
+            try:
+                source = open(source, 'r')
+            except FileNotFoundError:
+                exit("File " + source.name + " not found")
 
-            # Read all k-mers and counts into dictionary
-            print("Reading kmer counts from file " + source.name + "...")
-            log.write("Kmer loading from " + source.name + " began at time " + ctime() + "\n")
+        # Read all k-mers and counts into dictionary
+        print("Reading kmer counts from file " + source.name + "...")
+        log.write("Kmer loading from " + source.name + " began at time " + ctime() + "\n")
+        line = source.readline()
+
+        while line:
+            # Error message for unreadable input
+            assert line[0] == ">", \
+            "\nUnable to read k-mers and scores due to unexpected input. " + \
+            "Line was:\n" + line.rstrip('\n') + "\nfrom " + source.name
+
+            # Read count and associated sequence
+            count = line[1:].rstrip('\n')
+
             line = source.readline()
+            seq = line.rstrip('\n')
 
-            while line:
-                # Error message for unreadable input
-                assert line[0] == ">", \
-                "\nUnable to read k-mers and scores due to unexpected input. " + \
-                "Line was:\n" + line.rstrip('\n') + "\nfrom " + source.name
+            level1 = seq[0:6]
+            level2 = seq[6:12]
+            level3 = seq[12:17]
 
-                # Read count and associated sequence
-                count = line[1:].rstrip('\n')
+            # Insert entry
 
-                line = source.readline()
-                seq = line.rstrip('\n')
+            # If there no entry for level1
+            if not level1 in self.counts:
+                self.counts[level1] = {level2: {level3: count}}
 
-                level1 = seq[0:6]
-                level2 = seq[6:12]
-                level3 = seq[12:17]
+            # If there is an entry for level1 but not level2
+            elif not level2 in self.counts[level1]:
+                self.counts[level1][level2] = {level3: count}
 
-                # Insert entry
+            # If there is an entry for level1 and level2
+            elif not level3 in self.counts[level1][level2]:
+                self.counts[level1][level2][level3] = count
 
-                # If there no entry for level1
-                if not level1 in self.counts:
-                    self.counts[level1] = {level2: {level3: count}}
+            # If entry already exists, raise error (should be no duplicates in file)
+            else:
+                raise AssertionError("Duplicate entry found for sequence " \
+                + seq + " in " + source.name)
 
-                # If there is an entry for level1 but not level2
-                elif not level2 in self.counts[level1]:
-                    self.counts[level1][level2] = {level3: count}
+            self.num_entries += 1
 
-                # If there is an entry for level1 and level2
-                elif not level3 in self.counts[level1][level2]:
-                    self.counts[level1][level2][level3] = count
+            # Watch size grow
+            # if cur_size != sizeofdict(counts):
+            #     cur_size = sizeofdict(counts)
+            #     print("Number of entries =", num_entries, \
+            #     "\ttop level size =", sys.getsizeof(counts), \
+            #     "\ttotal size =", cur_size)
 
-                # If entry already exists, raise error (should be no duplicates in file)
-                else:
-                    raise AssertionError("Duplicate entry found for sequence " \
-                    + seq + " in " + source.name)
-
-                self.num_entries += 1
-
-                # Watch size grow
-                # if cur_size != sizeofdict(counts):
-                #     cur_size = sizeofdict(counts)
-                #     print("Number of entries =", num_entries, \
-                #     "\ttop level size =", sys.getsizeof(counts), \
-                #     "\ttotal size =", cur_size)
-
-                line = source.readline()
-        except:
-                # Temporary formatting workaround, the difference in tabs was mucking up the git diff
-                pass
+            line = source.readline()
 
         # Close source file and remove dummy entry if necessary
         source.close()
