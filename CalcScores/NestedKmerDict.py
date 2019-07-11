@@ -1,4 +1,4 @@
-# 10 July 2019
+# 11 July 2019
 # Lisa Malins
 # NestedKmerDict.py
 
@@ -10,6 +10,9 @@ Multiple Jellyfish dump files can be read into same dictionary object.
 
 import sys
 from GetSizeOfDict import sizeofdict
+from time import ctime
+from time import process_time
+from datetime import timedelta
 
 class NestedKmerDict():
     def __init__(self):
@@ -19,14 +22,20 @@ class NestedKmerDict():
 
     # Read 17-mers from Jellyfish dump file
     # Accepts string of filename or file object
-    def Populate(self, source):
+    def Populate(self, source, log=open("/dev/fd/1", 'w')):
+        time0 = process_time()
+
         try:
             # If string of filename passed, reassign variable to be file object
             if isinstance(source, str):
-                source = open(source, 'r')
+                try:
+                    source = open(source, 'r')
+                except FileNotFoundError:
+                    exit("File " + source.name + " not found")
 
             # Read all k-mers and counts into dictionary
             print("Reading kmer counts from file " + source.name + "...")
+            log.write("Kmer loading from " + source.name + " began at time " + ctime() + "\n")
             line = source.readline()
 
             while line:
@@ -42,21 +51,22 @@ class NestedKmerDict():
                 seq = line.rstrip('\n')
 
                 level1 = seq[0:6]
-                level2 = seq[0:12]
+                level2 = seq[6:12]
+                level3 = seq[12:17]
 
                 # Insert entry
 
                 # If there no entry for level1
                 if not level1 in self.counts:
-                    self.counts[level1] = {level2: {seq: count}}
+                    self.counts[level1] = {level2: {level3: count}}
 
                 # If there is an entry for level1 but not level2
                 elif not level2 in self.counts[level1]:
-                    self.counts[level1][level2] = {seq: count}
+                    self.counts[level1][level2] = {level3: count}
 
                 # If there is an entry for level1 and level2
-                elif not seq in self.counts[level1][level2]:
-                    self.counts[level1][level2][seq] = count
+                elif not level3 in self.counts[level1][level2]:
+                    self.counts[level1][level2][level3] = count
 
                 # If entry already exists, raise error (should be no duplicates in file)
                 else:
@@ -73,24 +83,24 @@ class NestedKmerDict():
                 #     "\ttotal size =", cur_size)
 
                 line = source.readline()
-
-            # Close source file and remove dummy entry if necessary
-            source.close()
-            try:
-                self.counts.pop("")
-            except:
+        except:
+                # Temporary formatting workaround, the difference in tabs was mucking up the git diff
                 pass
 
-            # Output size of dictionary
-            print(str(self.num_entries) + " kmers and counts read from file " + source.name)
+        # Close source file and remove dummy entry if necessary
+        source.close()
+        self.counts.pop("") if "" in self.counts else None
 
-            # Print help if running in interactive mode
-            if not sys.argv[0]:
-                print("\nFurther commands:")
-                self.Help()
+        # Output size of dictionary
+        proc_time = process_time() - time0
+        print(str(self.num_entries) + " kmers and counts read from file " + source.name)
+        log.write("Kmer loading from " + source.name + " completed at time " + ctime() + "\n")
+        log.write("Load time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
 
-        except FileNotFoundError:
-            print("File " + source.name + " not found")
+        # Print help if running in interactive mode
+        if not sys.argv[0]:
+            print("\nFurther commands:")
+            self.Help()
 
     # Converts sequence to reverse complement
     def RC(self, seq):
@@ -108,30 +118,44 @@ class NestedKmerDict():
                 print("LOL that's literally not in my vocabulary")
         return rc
 
-    # Finds count for k-mer or its reverse complement
-    def Query(self, seq):
+    # Find count for k-mer or its reverse complement
+    # Always checks both forward and reverse and logs if both are found
+    def Query(self, seq, log=open("/dev/fd/1", 'w')):
         matches = 0
         try:
-            fcount = self.counts[seq[0:6]][seq[0:12]][seq]
+            fcount = self.counts[seq[0:6]][seq[6:12]][seq[12:17]]
             matches += 1
         except KeyError:
             fcount = 0
         try:
             rc = self.RC(seq)
-            rcount = self.counts[rc[0:6]][rc[0:12]][rc]
+            rcount = self.counts[rc[0:6]][rc[6:12]][rc[12:17]]
             matches += 1
         except KeyError:
-            return self.counts[seq[0:6]][seq[0:12]][seq]
+            rcount = 0
         except TypeError:
             print("Please enter a DNA sequence in quotes")
 
         if matches == 1:
             return fcount or rcount
         elif matches == 2:
-            print("Both " + seq + " and reverse complement " + rc + " found in dictionary")
+            log.write("Both " + seq + " and reverse complement " + rc + " found in dictionary\n")
+            return max(fcount, rcount)
         else:
-            print(seq + " not found in dictionary")
-        return
+            log.write(seq + " not found in dictionary\n")
+            return 0
+
+    # Find count for k-mer or its reverse complement
+    # Only checks for reverse complement if forward not found
+    def QueryFast(self, seq, log=open("/dev/fd/1", 'w')):
+        try:
+            return self.counts[seq[0:6]][seq[6:12]][seq[12:17]]
+        except KeyError:
+            rc = self.RC(seq)
+            try:
+                return self.counts[rc[0:6]][rc[6:12]][rc[12:17]]
+            except KeyError:
+                log.write(seq + " not found in dictionary\n")
 
 
     def PrintAll(self):
@@ -160,8 +184,6 @@ class NestedKmerDict():
 if __name__ == '__main__':
     nkd = NestedKmerDict()
     nkd.Populate("fakedump.fa")
-    print(nkd.Query("AAAAAAAAAAAAAAAAA"))
-    print(nkd.Query("TTTTTTTTTTTTTTTTT"))
-
-    nkd.Populate("monkeywrench.fa")
-    print(nkd.Query("GGGGGGGGGGGGGGGGG"))
+    # nkd.Populate("monkeywrench.fa")
+    # nkd.Query("GGGGGGGGGGGGGGGGG")
+    print("Size =", nkd.Size())

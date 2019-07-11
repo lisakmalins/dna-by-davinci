@@ -1,4 +1,4 @@
-# 10 July 2019
+# 11 July 2019
 # Lisa Malins
 # CalcKmerScores.py
 
@@ -12,13 +12,21 @@ If oligos are read from sam, output is also in sam format
 
 Usage:
 python CalcKmerScores.py dump.fa oligos.sam scores_output.sam
+
+If you need to calculate scores with 45-mers from multiple files
+but using same dictionary, use -i flag to open interactive mode
+at close of program and run the following command:
+>>> CalcFromSam(nkd, "nextoligofile.sam", "nextoutputfile.sam", log)
 """
 
 import sys
 from NestedKmerDict import NestedKmerDict
+from time import ctime
+from time import process_time
+from datetime import timedelta
 
 # not updated, please skip to CalcFromSam
-def CalcFromFasta(oligos, output, dump, log):
+def CalcFromFasta(nkd, oligos, output, dump, log):
     # Setup nested kmer dictionary
     nkd = NestedKmerDict()
     nkd.Populate(dumpname)
@@ -71,16 +79,19 @@ def CalcFromFasta(oligos, output, dump, log):
     print("Finished writing k-mers and scores in fasta format to " + outputname)
     print("Log written to " + logname)
 
-def CalcFromSam(oligos, output, dump, log):
-    # Setup nested kmer dictionary
-    nkd = NestedKmerDict()
-    nkd.Populate(dump)
+def CalcFromSam(nkd, oligos, output, log, fast=False):
+    if isinstance(oligos, str):
+        oligos = open(oligos, 'r')
+    if isinstance(output, str):
+        output = open(output, 'w')
+
+    time0 = process_time()
 
     # Begin log file with context
-    log.write("Log file for CalcKmerScores.py\n")
-    log.write("Dictionary loaded from jellyfish dump file = " + dump.name + "\n")
-    log.write("Sam source file = " + oligos.name + "\n")
+    log = open(log.name, 'a+')
+    log.write("Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime() + "\n")
     log.write("Output file of 45-mers and k-mer scores = " + output.name + "\n")
+    log.write("Fast mode is on\n") if fast else log.write("Fast mode is off\n")
 
     # Read 45-mers and calculate k-mer scores
     line = oligos.readline()
@@ -91,24 +102,24 @@ def CalcFromSam(oligos, output, dump, log):
             line = oligos.readline()
             continue
 
-        # Split line into components and grab oligo
-        splitline = line.split('\t')
-        oligo = splitline[9]
-
-        # Start with score of zero
+        # Grab oligo and start with score of 0
+        oligo = line.split('\t')[9]
         score = 0
 
         # Loop through 45-mer and query all 17-mers
         for i in range (0, 29):
             try:
                 seq = oligo[i:i+17]
-                count = nkd.Query(seq)
+                if fast:
+                    count = nkd.QueryFast(seq, log)
+                else:
+                    count = nkd.Query(seq, log)
                 score += int(count)
 
             # If 17-mer not found in dictionary, note in log and skip it
             except:
                 log.write("No dictionary entry for " + seq + \
-                " from source oligo " + splitline[0] + "\n")
+                " from source oligo " + line.split('\t')[0] + "\n")
                 continue
 
         # Write line with k-mer score appended
@@ -116,13 +127,20 @@ def CalcFromSam(oligos, output, dump, log):
 
         line = oligos.readline()
 
+
+    log.write("K-mer score calculation completed successfully at " + ctime() + "\n")
+    proc_time = process_time()
+    log.write("Calculation time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
     print("Finished writing k-mers and scores in sam format to " + output.name)
     print("Log written to " + log.name)
+
+    oligos.close()
+    output.close()
 
 
 # ----------------main-------------------
 
-if len(sys.argv) < 3 or len(sys.argv) > 4:
+if len(sys.argv) < 4 or len(sys.argv) > 5:
     exit("Usage: {dump input file} {oligo input file} {scores output file}")
 
 # Verify all files found and not garbage before loading dictionary
@@ -142,16 +160,17 @@ except FileNotFoundError:
 output = open(sys.argv[3], 'w')
 
 # Open log file
-try:
-    logfile = sys.argv[4]
-except:
-    logfile = output.name.split('.', 1)[0] + ".log"
+logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.split('.', 1)[0] + ".log"
 log = open(logfile, 'w')
+log.write("Log file for CalcKmerScores.py\n")
 
+# Setup nested kmer dictionary
+nkd = NestedKmerDict()
+nkd.Populate(dump, log)
 
 if sys.argv[2].split('.')[-1] == "sam":
-    CalcFromSam(oligos, output, dump, log)
+    CalcFromSam(nkd, oligos, output, log)
 elif sys.argv[2].split('.')[-1][:2] == "fa":
-    CalcFromFasta(oligos, output, dump, log)
+    CalcFromFasta(nkd, oligos, output, dump, log)
 else:
     exit("Usage: {dump input file} {oligo input file} {scores output file}")
