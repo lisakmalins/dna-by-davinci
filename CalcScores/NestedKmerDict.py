@@ -138,8 +138,7 @@ class NestedKmerDict():
             log.write("Both " + seq + " and reverse complement " + rc + " found in dictionary\n")
             return max(fcount, rcount)
         else:
-            log.write(seq + " not found in dictionary\n")
-            return 0
+            raise KeyError
 
     # Find count for k-mer or its reverse complement
     # Only checks for reverse complement if forward not found
@@ -148,10 +147,8 @@ class NestedKmerDict():
             return self.counts[seq[0:6]][seq[6:12]][seq[12:17]]
         except KeyError:
             rc = self.RC(seq)
-            try:
-                return self.counts[rc[0:6]][rc[6:12]][rc[12:17]]
-            except KeyError:
-                log.write(seq + " not found in dictionary\n")
+            return self.counts[rc[0:6]][rc[6:12]][rc[12:17]]
+
 
     def Size(self, sum=0, verbose=False):
         return self._Size(self.counts, sum, verbose)
