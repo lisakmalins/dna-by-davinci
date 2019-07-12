@@ -33,6 +33,7 @@ class NestedKmerDict():
 
         # Read all k-mers and counts into dictionary
         print("Reading kmer counts from file " + source.name + "...")
+        print("Logging to " + log.name)
         log.write("Kmer loading from " + source.name + " began at time " + ctime() + "\n")
         line = source.readline()
 

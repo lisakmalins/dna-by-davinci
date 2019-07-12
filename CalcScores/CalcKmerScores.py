@@ -162,6 +162,7 @@ output = open(sys.argv[3], 'w')
 # Open log file
 logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.split('.', 1)[0] + ".log"
 log = open(logfile, 'w')
+print("Logging to " + log.name)
 log.write("Log file for CalcKmerScores.py\n")
 
 # Setup nested kmer dictionary
