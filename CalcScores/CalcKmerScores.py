@@ -156,18 +156,21 @@ try:
     dump = open(sys.argv[1], 'r')
 except FileNotFoundError:
     exit("File " + sys.argv[1] + " not found.")
+print("Will read counts from " + dump.name)
 
 # Open file of 45-mers
 try:
     oligos = open(sys.argv[2], 'r')
 except FileNotFoundError:
     exit("File " + sys.argv[2] + " not found.")
+print("Will read oligos from " + oligos.name)
 
 # Remember that one time I named the log but forgot to name the output file
 # and then it wrote the output and the log in the same place lol that was hilarious
 assert sys.argv[3][-3:] != "log", "Make sure you specify an output file\n" + usage
 # Open output file
 output = open(sys.argv[3], 'w')
+print("Will write scores to " + output.name)
 
 # Open log file
 logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.split('.', 1)[0] + ".log"
