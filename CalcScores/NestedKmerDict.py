@@ -18,6 +18,7 @@ class NestedKmerDict():
         self.counts = {"": {"": {"": 0}}}
         self.num_entries = 0
         self.cur_size = 0
+        self.dup_found = False
 
     # Read 17-mers from Jellyfish dump file
     # Accepts string of filename or file object
@@ -34,7 +35,7 @@ class NestedKmerDict():
         # Read all k-mers and counts into dictionary
         print("Reading kmer counts from file " + source.name + "...")
         print("Logging to " + log.name)
-        log.write("Kmer loading from " + source.name + " began at time " + ctime() + "\n")
+        log.write("> Kmer loading from " + source.name + " began at time " + ctime() + "\n")
         line = source.readline()
 
         while line:
@@ -90,9 +91,12 @@ class NestedKmerDict():
         # Output size of dictionary
         proc_time = process_time() - time0
         print(str(self.num_entries) + " kmers and counts read from file " + source.name)
-        log.write("Kmer loading from " + source.name + " completed at time " + ctime() + "\n")
-        log.write("Load time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
-        log.write("Total size in memory is " + str(self.Size()) + "\n")
+        print("Calculating memory size...")
+        self.cur_size = self.Size()
+        print("Memory size is " + str(self.cur_size) + " bytes.")
+        log.write("> Kmer loading from " + source.name + " completed at time " + ctime() + "\n")
+        log.write("> Load time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
+        log.write("> Total size in memory is " + str(self.cur_size) + " bytes for " + str(self.num_entries) + " entries\n")
 
         # Print help if running in interactive mode
         if not sys.argv[0]:

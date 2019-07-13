@@ -36,13 +36,13 @@ def CalcFromFasta(nkd, oligos, output, dump, log):
     output = open(outputname, 'w')
 
     # Setup log file
-    log = open(logname, 'w')
+    log = open(logname, 'a+')
 
     # Begin log file with context
-    log.write("Log file for CalcKmerScores.py\n")
-    log.write("Dictionary loaded from jellyfish dump file = " + dumpname + "\n")
-    log.write("45-mer source file = " + oligoname + "\n")
-    log.write("Output file of 45-mers and k-mer scores = " + outputname + "\n")
+    log.write("> Log file for CalcKmerScores.py\n")
+    log.write("> Dictionary loaded from jellyfish dump file = " + dumpname + "\n")
+    log.write("> 45-mer source file = " + oligoname + "\n")
+    log.write("> Output file of 45-mers and k-mer scores = " + outputname + "\n")
 
     # Read 45-mers and calculate k-mer scores
     header = source.readline().rstrip('\n')
@@ -89,9 +89,12 @@ def CalcFromSam(nkd, oligos, output, log, fast=False):
 
     # Begin log file with context
     log = open(log.name, 'a+')
-    log.write("Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime() + "\n")
-    log.write("Output file of 45-mers and k-mer scores = " + output.name + "\n")
-    log.write("Fast mode is on\n") if fast else log.write("Fast mode is off\n")
+    log.write("> Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime() + "\n")
+    log.write("> Output file of 45-mers and k-mer scores = " + output.name + "\n")
+    log.write("> Fast mode is on\n") if fast else log.write("> Fast mode is off\n")
+    print("Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime())
+    print("Output file of 45-mers and k-mer scores = " + output.name)
+    print("Fast mode is on") if fast else print("Fast mode is off")
 
     # Read 45-mers and calculate k-mer scores
     line = oligos.readline()
@@ -128,9 +131,10 @@ def CalcFromSam(nkd, oligos, output, log, fast=False):
         line = oligos.readline()
 
 
-    log.write("K-mer score calculation completed successfully at " + ctime() + "\n")
-    proc_time = process_time()
-    log.write("Calculation time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
+    log.write("> K-mer score calculation for file " + oligos.name + " completed successfully at " + ctime() + "\n")
+    log.write("> Scores output at " + output.name + "\n")
+    proc_time = process_time() - time0
+    log.write("> Calculation time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
     print("Finished writing k-mers and scores in sam format to " + output.name)
     print("Log written to " + log.name)
 
@@ -161,9 +165,9 @@ output = open(sys.argv[3], 'w')
 
 # Open log file
 logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.split('.', 1)[0] + ".log"
-log = open(logfile, 'w')
+log = open(logfile, 'a+')
 print("Logging to " + log.name)
-log.write("Log file for CalcKmerScores.py\n")
+log.write("> Log file for CalcKmerScores.py\n")
 
 # Setup nested kmer dictionary
 nkd = NestedKmerDict()
