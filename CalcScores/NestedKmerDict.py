@@ -106,7 +106,8 @@ class NestedKmerDict():
     # Converts sequence to reverse complement
     def RC(self, seq):
         rc = ""
-        for letter in seq:
+        # syntax [::-1] reverses string
+        for letter in seq[::-1]:
             if letter == 'A':
                 rc += 'T'
             elif letter == 'C':
@@ -116,7 +117,7 @@ class NestedKmerDict():
             elif letter == 'T':
                 rc += 'A'
             else:
-                print("LOL that's literally not in my vocabulary")
+                raise TypeError("Function RC only accepts A, C, G, and T")
         return rc
 
     # Find count for k-mer or its reverse complement
