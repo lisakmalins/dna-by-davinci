@@ -117,7 +117,7 @@ class NestedKmerDict():
             elif letter == 'T':
                 rc += 'A'
             else:
-                raise TypeError("Function RC only accepts A, C, G, and T")
+                raise ValueError("Function RC only accepts A, C, G, and T")
         return rc
 
     # Find count for k-mer or its reverse complement
