@@ -79,7 +79,7 @@ def CalcFromFasta(nkd, oligos, output, dump, log):
     print("Finished writing k-mers and scores in fasta format to " + outputname)
     print("Log written to " + logname)
 
-def CalcFromSam(nkd, oligos, output, log, fast=False):
+def CalcFromSam(nkd, oligos, output, log, fast=True):
     if isinstance(oligos, str):
         oligos = open(oligos, 'r')
     if isinstance(output, str):
@@ -144,8 +144,11 @@ def CalcFromSam(nkd, oligos, output, log, fast=False):
 
 # ----------------main-------------------
 
-if len(sys.argv) < 4 or len(sys.argv) > 5:
-    exit("Usage: {dump input file} {oligo input file} {scores output file}")
+usage = "Usage: {dump input file} {oligo input file} {scores output file} " \
+"Optional: {custom log file name} {fast mode True/False}"
+
+if len(sys.argv) < 4 or len(sys.argv) > 6:
+    exit(usage)
 
 # Verify all files found and not garbage before loading dictionary
 # Open jellyfish dump file of 17-mers
@@ -160,6 +163,9 @@ try:
 except FileNotFoundError:
     exit("File " + sys.argv[2] + " not found.")
 
+# Remember that one time I named the log but forgot to name the output file
+# and then it wrote the output and the log in the same place lol that was hilarious
+assert sys.argv[3][-3:] != "log", "Make sure you specify an output file\n" + usage
 # Open output file
 output = open(sys.argv[3], 'w')
 
@@ -178,4 +184,4 @@ if sys.argv[2].split('.')[-1] == "sam":
 elif sys.argv[2].split('.')[-1][:2] == "fa":
     CalcFromFasta(nkd, oligos, output, dump, log)
 else:
-    exit("Usage: {dump input file} {oligo input file} {scores output file}")
+    exit(usage)
