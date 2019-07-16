@@ -1,5 +1,4 @@
 *.pyc
-originals/
 sandbox/
 data/
-JellyfishCount/
+.snakemake
