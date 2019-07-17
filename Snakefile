@@ -6,28 +6,32 @@ rule targets:
         expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS),
         "data/maps/zmays_AGPv4_map_filtered_42x_scores_histo.txt"
 
-#TODO reformat with wildcards
 rule score_histogram:
     input:
-        "data/maps/zmays_AGPv4_map_filtered_42x_scores.sam"
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
     output:
-        "data/maps/zmays_AGPv4_map_filtered_42x_scores_histo.txt"
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores_histo.txt"
     shell:
         "python3 JellyfishKmers/ScoresHistogram.py {input} {output}"
 
-#TODO redo this step in C++ or python script mdoe
-# rule calc_scores:
+rule calc_scores:
+    input:
+        dump="data/kmer-counts/{read}_17mer_dumps.fa"
+        map="data/maps/zmays_AGPv4_map_filtered.sam"
+    output:
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
+    shell:
+        "python3 CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
 
-# rule binned_counts:
-#     input:
-#     output:
-#     shell:
-#         "grep -m 1 -v "^@" -n zmays_AGPv4_map.sam | cut -f1 -d:"
-#
-# rule make_bins:
-#     input:
-#     output:
-#     shell:
+rule binned_counts:
+
+rule make_bins:
+    input:
+        "data/maps/zmays_AGPv4_map.sam"
+    output:
+        "data/maps/zmays_AGPv4_map_1000000_win.bed"
+    shell:
+        "bash setup_bins.sh {input} {output} 1000000"
 
 rule dump:
     input:
