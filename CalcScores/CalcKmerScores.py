@@ -39,7 +39,7 @@ def CalcFromFasta(nkd, oligos, output, dump, log):
     output = open(outputname, 'w')
 
     # Setup log file
-    log = open(logname, 'a+')
+    log = open(logname, 'a')
 
     # Begin log file with context
     log.write("> Log file for CalcKmerScores.py\n")
@@ -91,7 +91,7 @@ def CalcFromSam(nkd, oligos, output, log, fast=True):
     time0 = process_time()
 
     # Begin log file with context
-    log = open(log.name, 'a+')
+    log = open(log.name, 'a')
     log.write("> Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime() + "\n")
     log.write("> Output file of 45-mers and k-mer scores = " + output.name + "\n")
     log.write("> Fast mode is " +  "on\n" if fast else "off\n")
@@ -177,7 +177,7 @@ print("Will write scores to " + output.name)
 
 # Open log file
 logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.split('.', 1)[0] + ".log"
-log = open(logfile, 'a+')
+log = open(logfile, 'w')
 print("Logging to " + log.name)
 log.write("> Log file for CalcKmerScores.py\n")
 
