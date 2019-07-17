@@ -28,59 +28,6 @@ except:
     from time import clock as process_time #python2
 from datetime import timedelta
 
-# not updated, please skip to CalcFromSam
-def CalcFromFasta(nkd, oligos, output, dump, log):
-    # Setup nested kmer dictionary
-    nkd = NestedKmerDict()
-    nkd.Populate(dumpname)
-
-    # Setup IO
-    source = open(oligoname, 'r')
-    output = open(outputname, 'w')
-
-    # Setup log file
-    log = open(logname, 'a')
-
-    # Begin log file with context
-    log.write("> Log file for CalcKmerScores.py\n")
-    log.write("> Dictionary loaded from jellyfish dump file = " + dumpname + "\n")
-    log.write("> 45-mer source file = " + oligoname + "\n")
-    log.write("> Output file of 45-mers and k-mer scores = " + outputname + "\n")
-
-    # Read 45-mers and calculate k-mer scores
-    header = source.readline().rstrip('\n')
-    while header:
-        # Error message if line is not a fasta header
-        assert header[0] == ">", \
-        "\nUnable to read k-mers and scores due to unexpected input. " + \
-        "Line was:\n" + line.rstrip('\n') + "\nfrom " + oligofile
-
-        # Read 45-mers and calculate k-mer score
-        oligo = source.readline().rstrip('\n')
-        # print("Calculating score for " + line) #debug
-
-        # Start with score of zero
-        score = 0
-
-        # Loop through 45-mer and query all 17-mers
-        for i in range (0, 29):
-            try:
-                seq = oligo[i:i+17]
-                count = nkd.Query(seq)
-                score += int(count)
-
-            # If 17-mer not found in dictionary, note in log and skip it
-            except:
-                log.write("No dictionary entry for " + seq + \
-                " from source oligo " + header + "\n")
-                continue
-
-        output.write(header + " " + str(score) + "\n")
-        output.write(oligo + "\n")
-        header = source.readline().rstrip('\n')
-
-    print("Finished writing k-mers and scores in fasta format to " + outputname)
-    print("Log written to " + logname)
 
 def CalcFromSam(nkd, oligos, output, log, fast=True):
     if isinstance(oligos, str):
