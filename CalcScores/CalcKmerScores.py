@@ -22,7 +22,10 @@ at close of program and run the following command:
 import sys
 from NestedKmerDict import NestedKmerDict
 from time import ctime
-from time import process_time
+try:
+    from time import process_time
+except:
+    from time import clock as process_time #python2
 from datetime import timedelta
 
 # not updated, please skip to CalcFromSam
@@ -91,10 +94,10 @@ def CalcFromSam(nkd, oligos, output, log, fast=True):
     log = open(log.name, 'a+')
     log.write("> Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime() + "\n")
     log.write("> Output file of 45-mers and k-mer scores = " + output.name + "\n")
-    log.write("> Fast mode is on\n") if fast else log.write("> Fast mode is off\n")
+    log.write("> Fast mode is " +  "on\n" if fast else "off\n")
     print("Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime())
     print("Output file of 45-mers and k-mer scores = " + output.name)
-    print("Fast mode is on") if fast else print("Fast mode is off")
+    print("Fast mode is " +  "on" if fast else "off")
 
     # Read 45-mers and calculate k-mer scores
     line = oligos.readline()

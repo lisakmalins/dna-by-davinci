@@ -10,7 +10,10 @@ Multiple Jellyfish dump files can be read into same dictionary object.
 
 import sys
 from time import ctime
-from time import process_time
+try:
+    from time import process_time
+except:
+    from time import clock as process_time #python2
 from datetime import timedelta
 
 class NestedKmerDict():
