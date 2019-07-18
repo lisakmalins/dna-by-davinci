@@ -1,10 +1,27 @@
 READS=["85seed_42xsub_SRR2960981"]
 
+# Limits for k-mer score filtering
+countsper = 45 - 17 + 1 # each 45-mer contains this many 17-mers (29)
+coverage = 34
+lower = round(countsper * coverage * 0.375)
+upper = round(countsper * coverage * 1.8125)
+
 rule targets:
     input:
         expand("data/kmer-counts/{read}_17mer_histo.txt", read=READS),
         expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS),
-        "data/maps/zmays_AGPv4_map_filtered_42x_scores_histo.txt"
+        "data/maps/zmays_AGPv4_map_filtered_42x_scores_histo.txt",
+        expand("data/scores/zmays_AGPv4_map_filtered_42x_scores_KS_{l}_{u}.sam", l=lower, u=upper)
+
+## Calculate k-mer scores for 45-mers ##
+
+rule score_filter:
+    input:
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
+    output:
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores_KS_{lower}_{upper}.sam"
+    shell:
+        "python3 FilterByScore/FilterByScore.py {input} {lower} {upper} {output}"
 
 rule score_histogram:
     input:
@@ -16,12 +33,14 @@ rule score_histogram:
 
 rule calc_scores:
     input:
-        dump="data/kmer-counts/{read}_17mer_dumps.fa"
+        dump="data/kmer-counts/{read}_17mer_dumps.fa",
         map="data/maps/zmays_AGPv4_map_filtered.sam"
     output:
         "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
     shell:
         "python3 CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
+
+## Generate coverage plots ##
 
 rule binned_counts:
 
@@ -32,6 +51,8 @@ rule make_bins:
         "data/maps/zmays_AGPv4_map_1000000_win.bed"
     shell:
         "bash setup_bins.sh {input} {output} 1000000"
+
+## Count 17-mer frequencies with Jellyfish ##
 
 rule dump:
     input:
