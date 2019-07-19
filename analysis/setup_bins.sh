@@ -1,6 +1,6 @@
 #!/bin/bash
 
-module load bedtools2/2.27.0 samtools/1.9
+module load bedtools2/2.27.0
 cd /scratch/lmalins/paint/maize-by-michelangelo/data/maps
 BINSIZE=1000000
 
@@ -13,9 +13,3 @@ bedtools makewindows -g genome_for_bedtools.txt -w $BINSIZE > $BINSIZE'_win.bed'
 # format of a BED-3 FILE
 # chrome \t start \t end \n
 # where start is 0-based coords
-
-# convert sam to bam for using bedtools
-samtools view -b -o tinymap.bam tinymap.sam
-
-# count reads in non-overlapping bins
-bedtools coverage -a $BINSIZE'_win.bed' -b tinymap.bam > $BINSIZE'_binned_read_counts.bed'
