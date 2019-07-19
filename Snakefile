@@ -10,7 +10,7 @@ rule targets:
     input:
         expand("data/kmer-counts/{read}_17mer_histo.txt", read=READS),
         expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS),
-        "data/maps/zmays_AGPv4_map_filtered_42x_scores_histo.txt",
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores_histo.txt",
         expand("data/scores/zmays_AGPv4_map_filtered_42x_scores_KS_{l}_{u}.sam", l=lower, u=upper)
 
 ## Calculate k-mer scores for 45-mers ##
@@ -33,7 +33,7 @@ rule score_histogram:
 
 rule calc_scores:
     input:
-        dump="data/kmer-counts/{read}_17mer_dumps.fa",
+        dump=expand("data/kmer-counts/{read}_17mer_dumps.fa", read=READS),
         map="data/maps/zmays_AGPv4_map_filtered.sam"
     output:
         "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
