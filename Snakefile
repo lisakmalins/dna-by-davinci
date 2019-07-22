@@ -13,23 +13,8 @@ rule targets:
         "data/scores/zmays_AGPv4_map_filtered_42x_scores_histo.txt",
         expand("data/scores/zmays_AGPv4_map_filtered_42x_scores_KS_{l}_{u}.sam", l=lower, u=upper)
 
-## Calculate k-mer scores for 45-mers ##
 
-rule score_filter:
-    input:
-        "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
-    output:
-        "data/scores/zmays_AGPv4_map_filtered_42x_scores_KS_{lower}_{upper}.sam"
-    shell:
-        "python3 FilterByScore/FilterByScore.py {input} {lower} {upper} {output}"
-
-rule score_histogram:
-    input:
-        "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
-    output:
-        "data/scores/zmays_AGPv4_map_filtered_42x_scores_histo.txt"
-    shell:
-        "python3 JellyfishKmers/ScoresHistogram.py {input} {output}"
+### Calculate k-mer scores for 45-mers ###
 
 rule calc_scores:
     input:
@@ -40,19 +25,43 @@ rule calc_scores:
     shell:
         "python3 CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
 
-## Generate coverage plots ##
-
-rule binned_counts:
-
-rule make_bins:
+rule score_histogram:
     input:
-        "data/maps/zmays_AGPv4_map.sam"
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
     output:
-        "data/maps/zmays_AGPv4_map_1000000_win.bed"
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores_histo.txt"
     shell:
-        "bash setup_bins.sh {input} {output} 1000000"
+        "python3 JellyfishKmers/ScoresHistogram.py {input} {output}"
 
-## Count 17-mer frequencies with Jellyfish ##
+rule score_filter:
+    input:
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores.sam"
+    output:
+        "data/scores/zmays_AGPv4_map_filtered_42x_scores_KS_{lower}_{upper}.sam"
+    shell:
+        "python3 FilterByScore/FilterByScore.py {input} {lower} {upper} {output}"
+
+
+### Count 17-mer frequencies with Jellyfish ###
+
+rule count_pass1:
+    input:
+        "data/reads/{read}.fastq"
+    output:
+        "data/kmer-counts/{read}.bc"
+    threads: 16
+    shell:
+        "jellyfish bc -m 17 -C -s 20G -t 16 -o {output} {input}"
+
+rule count_pass2:
+    input:
+        fastq="data/reads/{read}.fastq",
+        bc="data/kmer-counts/{read}.bc"
+    output:
+        "data/kmer-counts/{read}_17mer_counts.jf"
+    threads: 16
+    shell:
+        "jellyfish count -m 17 -C -s 3G -t 16 --bc {input.bc} -o {output} {input.fastq}"
 
 rule dump:
     input:
@@ -70,21 +79,15 @@ rule histo:
     shell:
         "jellyfish histo {input} > {output}"
 
-rule count_pass2:
-    input:
-        fastq="data/reads/{read}.fastq",
-        bc="data/kmer-counts/{read}.bc"
-    output:
-        "data/kmer-counts/{read}_17mer_counts.jf"
-    threads: 16
-    shell:
-        "jellyfish count -m 17 -C -s 3G -t 16 --bc {input.bc} -o {output} {input.fastq}"
 
-rule count_pass1:
+### Generate coverage plots ###
+
+rule make_bins:
     input:
-        "data/reads/{read}.fastq"
+        "data/maps/zmays_AGPv4_map.sam"
     output:
-        "data/kmer-counts/{read}.bc"
-    threads: 16
+        "data/maps/zmays_AGPv4_map_1000000_win.bed"
     shell:
-        "jellyfish bc -m 17 -C -s 20G -t 16 -o {output} {input}"
+        "bash setup_bins.sh {input} {output} 1000000"
+
+rule binned_counts:
