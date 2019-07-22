@@ -1,6 +1,6 @@
 #!/bin/bash
 # Purpose: Set up windows for binned probe counts
-# Usage: bash setup_bins.sh {map input filename} {windows output filename} {binsize}
+# Usage: bash setup_bins.sh {sam input file} {windows output file} {binsize}
 # Default binsize: 1000000 bases
 
 module load bedtools2/2.27.0
