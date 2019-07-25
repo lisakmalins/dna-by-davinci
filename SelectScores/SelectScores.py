@@ -1,12 +1,12 @@
 # 16 July 2019
 # Lisa Malins
-# FilterByScore.py
+# SelectScores.py
 
 """
 Filters output of CalcKmerScores.py by k-mer score.
 
 Usage (output and log filenames are optional):
-python FilterByScore.py {input filename} {lower bound} {upper bound} {output filename} {log filename}
+python SelectScores.py {input filename} {lower bound} {upper bound} {output filename} {log filename}
 """
 
 import sys
