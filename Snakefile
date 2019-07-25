@@ -87,7 +87,7 @@ rule interleave:
     output:
         "data/reads/{p}{read}.fastq"
     shell:
-        "bash fastInterleaveFromUnzip.sh {input} {output}"
+        "bash SampleReads/fastInterleaveFromUnzip.sh {input} {output}"
 
 ###--------------------- Count 17-mer frequencies with Jellyfish ---------------------###
 
@@ -184,7 +184,7 @@ rule score_histogram:
     output:
         "data/scores/{genome}_45mers_{p}{read}_scores_histo.txt"
     shell:
-        "python3 JellyfishKmers/ScoresHistogram.py {input} {output}"
+        "python3 ScoresHisto/ScoresHistogram.py {input} {output}"
 
 rule score_select:
     input:
@@ -205,7 +205,7 @@ rule make_bins:
     output:
         "data/coverage/{genome}_45mers_{params.binsize}_bins.bed"
     shell:
-        "bash setup_bins.sh {input} {output} {params.binsize}"
+        "bash analysis/setup_bins.sh {input} {output} {params.binsize}"
 
 rule binned_counts:
     input:
@@ -215,3 +215,5 @@ rule binned_counts:
         binsize=1000000
     output:
         "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed"
+    shell:
+        "bash analysis/binned_read_counts.sh {input.map} {input.bins} {output}"
