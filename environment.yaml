@@ -7,7 +7,7 @@ channels:
 dependencies:
   - bedtools=2.28.0
   - bwa=0.7.17
-  - graphviz=2.38.0
+  - graphviz=2.40.1
   - jellyfish=2.2.10
   - python=3.7.3
   - r-base=3.6.0
