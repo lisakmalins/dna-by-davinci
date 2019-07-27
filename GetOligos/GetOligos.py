@@ -33,15 +33,15 @@ from Kmer import Kmer
 # Finds the next header and evaluates whether
 #   we want to get k-mers out of that section.
 # Ends program when no more relevant headers found.
-def FindNextHeader(fo):
+def FindNextHeader(source):
     # Read next line of file
-    nextLine = fo.readline()
+    line = source.readline()
 
     # While there are more lines to read
-    while nextLine:
+    while line:
         # If the next line is a header, create a header object and return to main
-        if nextLine[0] == ">":
-            header = ZmaysHeader(nextLine)
+        if line[0] == ">":
+            header = ZmaysHeader(line)
 
             # If the next line is a header that we care about,
             #   return the header and proceed to get k-mers from that sequence
@@ -52,54 +52,58 @@ def FindNextHeader(fo):
             #   skip it and keep looking
             else:
                 # print("I don't care about ", header.id) #debug
-                nextLine = fo.readline()
+                line = source.readline()
                 continue
 
         # If the next line is not a header, read the next line and continue loop
-        nextLine = fo.readline()
+        line = source.readline()
 
     # End program if end of file reached
-    fo.close()
-    sys.exit("Finished writing " + str(mer_size) + "-mers to " + output_name)
+    source.close()
+    sys.exit("Finished writing " + str(mer_size) + "-mers to " + output.name)
 
 
 
 
 
 #-------------------main-----------------------
+usage = "Usage: python GetOligos.py {genome filename} {mer size} {step size} {output filename}"
 
 # Read arguments
 try:
-    source_name = sys.argv[1]
+    source = open(sys.argv[1], 'r')
+except IndexError:
+    exit(usage)
+except FileNotFoundError as e:
+    exit("File " + e.filename + " not found.\n" + usage)
+
+try:
     mer_size = int(sys.argv[2])
     step_size = int(sys.argv[3])
-    output_name = sys.argv[4]
-    if mer_size <= 0 or step_size <= 0 or step_size > mer_size:
-        raise ValueError
+    if mer_size <= 0 or step_size <= 0:
+        raise ValueError()
+    if step_size > mer_size:
+        exit("Mer size must be greater than step size\n" + usage)
 except IndexError:
-    exit("Usage: python GetOligos.py {genome filename} {mer size} {step size} {output filename}")
+    exit(usage)
 except ValueError:
-    exit("Usage: python GetOligos.py {genome filename} {mer size} {step size} {output filename}")
+    exit("Please provide the mer-size and step-size as positive integers\n" + usage)
 
-
-# Open source file in read-only mode
 try:
-    source = open(source_name, "r")
-except FileNotFoundError:
-    exit("File " + sys.argv[1] + " not found.")
+    output = open(sys.argv[4], 'w')
+except IndexError:
+    output = open(source.name.split('.', 1)[0] + "_" + str(mer_size) + "mers.fa", 'w')
 
-# Set up file output
-output = open(output_name, "w")
 
 # Get length of file for progress output
-print("Determining file length of " + source_name + "...")
+print("Determining file length of " + source.name + "...")
 source.seek(0,2)
 filelength = float(source.tell())
 source.seek(0)
 percent = 10
 
 print("Reading " + str(mer_size) + "-mers with step size of " + str(step_size) + \
-" from " + source_name + " and writing to " + output_name)
+" from " + source.name + " and writing to " + output.name)
 
 # Create Kmer object
 currentKmer = Kmer(source, mer_size, step_size)
@@ -122,4 +126,4 @@ while not currentKmer.eof:
 
 # Close file
 source.close()
-print("Finished writing " + str(mer_size) + "-mers to " + output_name)
+print("Finished writing " + str(mer_size) + "-mers to " + output.name)
