@@ -12,11 +12,6 @@ Output is in fasta format:
     >[chromosome number]_[index]
     [sequence]
 
-Header class will need to be remade for different assemblies
-    since header formats vary (see comments in class)
-Header class lets this file know whether to get k-mers
-    out of a section or skip it.
-
 Usage:
 python GetOligos.py {genome filename} {mer size} {step size} {output filename}
 
@@ -25,8 +20,6 @@ python GetOligos.py agra_cadabra_genome.fa 45 3 agra_cadabra_45mers.fa
 """
 
 import sys
-from ZmaysB73Header import ZmaysHeader
-from Kmer import Kmer
 
 class Kmer:
 
@@ -101,40 +94,11 @@ class Kmer:
         # Forget first s letters of k-mer and append nextLetters
         self.seq = self.seq[self.s:] + nextLetters
 
-class ZmaysHeader:
-
-    # Constructor -- accepts header text and extracts info
-    def __init__(self, line):
-        self.line = line                      # entire line
-
-        self.words = line.split()
-        self.type = self.words[1]             # dna:chromosome or dna:contig
-        self.id = self.words[0][1:]           # e.g., chromosome number or Pt, Mt, B73V4_ctg150
-
-        self.words = self.words[2].split(":")
-        self.length = self.words[4]           # length of sequence
-
-    # Evaluate whether we want to read k-mers from a section based on its header
-    # If the header indicates section is a normal, numbered chromosome, returns true
-    # Function needs to be rewritten if different assembly has different header format
-    def EvalHeader(self):
-        if self.type == "dna:chromosome" and self.id.isdigit():
-            return True
-        else:
-            return False
-
-    # Debugging function: Prints all attributes
-    def PrintAll(self):
-        print("Type: ", self.type)
-        print("ID: ", self.id)
-        print("Length: ", self.length)
-        print("Do we care: ", self.EvalHeader(), "\n")
-
 
 # Finds the next header and evaluates whether
 #   we want to get k-mers out of that section.
 # Ends program when no more relevant headers found.
-def FindNextHeader(source):
+def FindNextHeader(source, goodheaders):
     # Read next line of file
     line = source.readline()
 
@@ -142,12 +106,11 @@ def FindNextHeader(source):
     while line:
         # If the next line is a header, create a header object and return to main
         if line[0] == ">":
-            header = ZmaysHeader(line)
-
             # If the next line is a header that we care about,
             #   return the header and proceed to get k-mers from that sequence
-            if header.EvalHeader():
-                return header
+            if line in goodheaders:
+                id = line[1:].split()[0]
+                return id
 
             # If the next line is a header that we don't care about,
             #   skip it and keep looking
@@ -195,6 +158,37 @@ try:
 except IndexError:
     output = open(source.name.split('.', 1)[0] + "_" + str(mer_size) + "mers.fa", 'w')
 
+try:
+    keep = open(source.name.rsplit('.',1)[0] + ".keep", 'r')
+except FileNotFoundError as e:
+    exit("File " + e.filename + " not found.\n" + \
+    "See README on GitHub for instructions on how to specify which headers to keep for genome " + source.name)
+
+# Read headers from keep file and verify they all have unique ID's
+goodheaders = keep.readlines()
+keep.close()
+
+ids = set()
+for h in goodheaders:
+    id = h.lstrip('>').split()[0]
+    if id in ids:
+        message = "Error: sequence IDs must be unique. Fasta headers are improperly formatted. See main README for instructions on how to correct this.\n" #TODO
+
+        message += "Headers known to program:\n"
+        for h in goodheaders:
+            message += h
+
+        message += "IDs parsed so far:\n"
+        for i in ids:
+            message += i + "\n"
+
+        message += "Duplicate: " + id + "\n"
+
+        log.write(message)
+        exit(message)
+
+    else:
+        ids.add(id)
 
 # Get length of file for progress output
 print("Determining file length of " + source.name + "...")
@@ -217,8 +211,8 @@ while not currentKmer.eof:
         percent += 10
 
     # Find next header and start a new k-mer
-    nextHeader = FindNextHeader(source)
-    currentKmer.StartNewKMer(nextHeader.id)
+    id = FindNextHeader(source, goodheaders)
+    currentKmer.StartNewKMer(id)
 
     # Loop through sequence until next header
     while not currentKmer.eos:
