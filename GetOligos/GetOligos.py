@@ -1,137 +1,83 @@
-# 16 April 2019
+# 29 July 2019
 # Lisa Malins
 # GetOligos.py
 
 """
-Script gets k-mers out of fasta genome assembly.
+Script slices fasta genome assembly into overlapping oligos.
 
 Accepts as arguments the source filename, k-mer size, step size,
-    and output filename.
-
-Output is in fasta format:
-    >[chromosome number]_[index]
-    [sequence]
+    output filename (optional) and log filename (optional).
 
 Usage:
-python GetOligos.py {genome filename} {mer size} {step size} {output filename}
+python GetOligos.py {genome filename} {mer size} {step size} {optional: output filename} {optional: log filename}
 
 Example command:
 python GetOligos.py agra_cadabra_genome.fa 45 3 agra_cadabra_45mers.fa
 """
 
 import sys
+from os import stat
+
+class HeaderException(Exception):
+    pass
 
 class Kmer:
 
-    # Constructor
-    def __init__(self, f, k, s):
-        self.fo = f         # File to read from
-        self.counter = 0    # Position in file (next letter to read)
-
-        self.k = k          # K-mer size
-        self.s = s          # Step size (how far to advance on next k-mer)
-
-        self.id = 0         # Chromosome ID
-        self.index = 1      # Index within chromosome (refers to starting letter of seq)
-        self.seq = ""       # K-mer sequence
-
-        self.eos = False    # Has program reached the end of the section?
-        self.eof = False    # Has program reached the end of the file?
-
-    # To start new chromosome, reset attributes and get next k-mer
-    def StartNewKMer(self, id):
-        # Set chromosome id
+    # Starts a new k-mer with given index and sequence
+    def StartNew(self, id, seq):
+        self.seq = seq
         self.id = id
-
-        # Set counter as current position of file object
-        self.counter = self.fo.tell()
-
-        # Reset index (position on chromosome) to 1
         self.index = 1
 
-        # Reset end of section flag
-        self.eos = False
-
-        # Wipe stored k-mer sequence
-        self.seq = ""
-
-        # Read next k letters, starting at stored counter position
-        #   and ignoring non-alphabetical characters
-        while len(self.seq) < self.k:
-            nextChar = self.fo.read(1)
-            if nextChar.isalpha():
-                self.seq += nextChar
-            self.counter += 1
-
-    # To get next k-mer, forget first s letters and append next s letters
-    def GetNextKMer(self):
-        nextLetters = ""
-        self.fo.seek(self.counter, 0)
-
-        # Fetch next s letters, ignoring spaces and newlines
-        while len(nextLetters) < self.s:
-            nextChar = self.fo.read(1)
-            if nextChar:
-                # If next character is a letter, add to nextLetters
-                if nextChar.isalpha():
-                    nextLetters += nextChar
-                    self.index += 1
-                # If next character is >, set eos = true and return to main
-                elif nextChar == ">":
-                    # Backspace file object's counter so header isn't skipped
-                    self.fo.seek(self.counter, 0)
-                    self.eos = True
-                    return
-
-                self.counter += 1
+    # Appends next sequence and forgets the same # characters that is added
+    def Advance(self, addition):
+        self.seq = self.seq[len(addition):] + addition
+        self.index += len(addition)
 
 
-            # If next character does not exist, exit function without appending to k-mer
-            else:
-                self.eof = True
-                return
-
-        # Forget first s letters of k-mer and append nextLetters
-        self.seq = self.seq[self.s:] + nextLetters
-
-
-# Finds the next header and evaluates whether
-#   we want to get k-mers out of that section.
-# Ends program when no more relevant headers found.
-def FindNextHeader(source, goodheaders):
-    # Read next line of file
-    line = source.readline()
-
-    # While there are more lines to read
-    while line:
-        # If the next line is a header, create a header object and return to main
+# Finds headers and returns "ID" next header that that matters
+def NextHeader(source, log, goodheaders, line=" "):
+    while True:
+        # If the next line is a header
         if line[0] == ">":
-            # If the next line is a header that we care about,
-            #   return the header and proceed to get k-mers from that sequence
             if line in goodheaders:
                 id = line[1:].split()[0]
                 return id
-
-            # If the next line is a header that we don't care about,
-            #   skip it and keep looking
             else:
-                # print("I don't care about ", header.id) #debug
-                line = source.readline()
-                continue
+                log.write("Ignored:\n" + line)
+                # print("I don't care about ", line.rstrip()) #debug
 
-        # If the next line is not a header, read the next line and continue loop
         line = source.readline()
 
-    # End program if end of file reached
-    source.close()
-    sys.exit("Finished writing " + str(mer_size) + "-mers to " + output.name)
+# Reads the specified number of characters from source and returns string
+def ReadChars(source, length):
+    addition = ""
+    while len(addition) < length:
+        next_letter = source.read(1)
 
-
-
+        # Append letters
+        if next_letter.isalpha():
+            addition += next_letter
+        # Ignore whitespace
+        elif next_letter.isspace():
+            continue
+        # Throw headers back
+        elif next_letter == '>':
+            line = ">" + source.readline()
+            raise HeaderException(line)
+        # Throw EOF when out of letters
+        elif not next_letter:
+            raise EOFError
+        # Anything else is a problem
+        else:
+            print(next_letter + " <-- wtf")
+            exit("I literally can't even right now") #debug
+    return addition
 
 
 #-------------------main-----------------------
-usage = "Usage: python GetOligos.py {genome filename} {mer size} {step size} {output filename}"
+
+usage = "Usage: python GetOligos.py {genome filename} {mer size} {step size} {optional: output name} {optional: log name}"
 
 # Read arguments
 try:
@@ -156,13 +102,24 @@ except ValueError:
 try:
     output = open(sys.argv[4], 'w')
 except IndexError:
-    output = open(source.name.split('.', 1)[0] + "_" + str(mer_size) + "mers.fa", 'w')
+    output = open(source.name.rsplit('.', 1)[0] + "_" + str(mer_size) + "mers.fa", 'w')
+
+try:
+    log = open(sys.argv[5], 'w')
+except IndexError:
+    log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
 
 try:
     keep = open(source.name.rsplit('.',1)[0] + ".keep", 'r')
 except FileNotFoundError as e:
     exit("File " + e.filename + " not found.\n" + \
     "See README on GitHub for instructions on how to specify which headers to keep for genome " + source.name)
+
+log.write("Log file for GetOligos.py\n")
+log.write("Genome file: " + source.name + "\n")
+log.write("Oligo size: " + str(mer_size))
+log.write("Step size: " + str(step_size) + "\n")
+log.write("Sequences to keep read from: " + keep.name + "\n")
 
 # Read headers from keep file and verify they all have unique ID's
 goodheaders = keep.readlines()
@@ -190,35 +147,47 @@ for h in goodheaders:
     else:
         ids.add(id)
 
+for h in goodheaders:
+    log.write(h)
+
+
 # Get length of file for progress output
-print("Determining file length of " + source.name + "...")
-source.seek(0,2)
-filelength = float(source.tell())
-source.seek(0)
+filelength = float(stat(source.name).st_size)
 percent = 10
 
 print("Reading " + str(mer_size) + "-mers with step size of " + str(step_size) + \
 " from " + source.name + " and writing to " + output.name)
+print("Logging to :" + log.name)
 
 # Create Kmer object
-currentKmer = Kmer(source, mer_size, step_size)
+kmer = Kmer()
+line = " "
 
-# Loop through entire file
-while not currentKmer.eof:
-    # Output progress message
-    if (source.tell() / filelength * 100) > percent:
-        print("Read progress: " + str(percent) + "%")
-        percent += 10
+try:
+    while True:
+        # Progress messages
+        if (source.tell() / filelength * 100 >= percent):
+            print("Read progress : " + str(percent) + "%")
+            percent += 10
 
-    # Find next header and start a new k-mer
-    id = FindNextHeader(source, goodheaders)
-    currentKmer.StartNewKMer(id)
+        # Get header, start new k-mer
+        id = NextHeader(source, log, goodheaders, line)
+        kmer.StartNew(id, ReadChars(source, 45))
 
-    # Loop through sequence until next header
-    while not currentKmer.eos:
-        output.write(">" + currentKmer.id + "_" + str(currentKmer.index) + " \n" + str(currentKmer.seq) + "\n")
-        currentKmer.GetNextKMer()
+        # Print k-mers until header encountered
+        while True:
+            output.write(">" + str(id) + "_" + str(kmer.index) + " \n")
+            output.write(kmer.seq + "\n")
+            try:
+                kmer.Advance(ReadChars(source, 3))
+            # Catch header line and carry to next main loop iteration
+            except HeaderException as e:
+                line = e.args[0]
+                break
 
-# Close file
-source.close()
-print("Finished writing " + str(mer_size) + "-mers to " + output.name)
+# Aaaaaaand stick the landing
+except (IndexError, EOFError) as e:
+    source.close()
+    print("Genome slicing in to oligos finished successfully.")
+    print("Progress messages may not have reached 100% because of ignored sequences.")
+    print("Finished writing " + str(mer_size) + "-mers to " + output.name)
