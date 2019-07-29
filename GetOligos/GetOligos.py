@@ -74,46 +74,51 @@ def ReadChars(source, length):
             exit("I literally can't even right now") #debug
     return addition
 
+def SetupIO():
+    usage = "Usage: python GetOligos.py {genome filename} {mer size} {step size} {optional: output name} {optional: log name}"
+
+    # Read arguments
+    try:
+        source = open(sys.argv[1], 'r')
+    except IndexError:
+        exit(usage)
+    except FileNotFoundError as e:
+        exit("File " + e.filename + " not found.\n" + usage)
+
+    try:
+        mer_size = int(sys.argv[2])
+        step_size = int(sys.argv[3])
+        if mer_size <= 0 or step_size <= 0:
+            raise ValueError()
+        if step_size > mer_size:
+            exit("Mer size must be greater than step size\n" + usage)
+    except IndexError:
+        exit(usage)
+    except ValueError:
+        exit("Please provide the mer-size and step-size as positive integers\n" + usage)
+
+    try:
+        output = open(sys.argv[4], 'w')
+    except IndexError:
+        output = open(source.name.rsplit('.', 1)[0] + "_" + str(mer_size) + "mers.fa", 'w')
+
+    try:
+        log = open(sys.argv[5], 'w')
+    except IndexError:
+        log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
+
+    try:
+        keep = open(source.name.rsplit('.',1)[0] + ".keep", 'r')
+    except FileNotFoundError as e:
+        exit("File " + e.filename + " not found.\n" + \
+        "See README on GitHub for instructions on how to specify which headers to keep for genome " + source.name)
+
+    return source, mer_size, step_size, output, log, keep
+
 
 #-------------------main-----------------------
 
-usage = "Usage: python GetOligos.py {genome filename} {mer size} {step size} {optional: output name} {optional: log name}"
-
-# Read arguments
-try:
-    source = open(sys.argv[1], 'r')
-except IndexError:
-    exit(usage)
-except FileNotFoundError as e:
-    exit("File " + e.filename + " not found.\n" + usage)
-
-try:
-    mer_size = int(sys.argv[2])
-    step_size = int(sys.argv[3])
-    if mer_size <= 0 or step_size <= 0:
-        raise ValueError()
-    if step_size > mer_size:
-        exit("Mer size must be greater than step size\n" + usage)
-except IndexError:
-    exit(usage)
-except ValueError:
-    exit("Please provide the mer-size and step-size as positive integers\n" + usage)
-
-try:
-    output = open(sys.argv[4], 'w')
-except IndexError:
-    output = open(source.name.rsplit('.', 1)[0] + "_" + str(mer_size) + "mers.fa", 'w')
-
-try:
-    log = open(sys.argv[5], 'w')
-except IndexError:
-    log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
-
-try:
-    keep = open(source.name.rsplit('.',1)[0] + ".keep", 'r')
-except FileNotFoundError as e:
-    exit("File " + e.filename + " not found.\n" + \
-    "See README on GitHub for instructions on how to specify which headers to keep for genome " + source.name)
+source, mer_size, step_size, output, log, keep = SetupIO()
 
 log.write("Log file for GetOligos.py\n")
 log.write("Genome file: " + source.name + "\n")
