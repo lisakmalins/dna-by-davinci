@@ -40,9 +40,26 @@ cd data/seqs
 wget ftp://ftp.ensemblgenomes.org/pub/plants/release-36/fasta/zea_mays/dna/Zea_mays.AGPv4.dna.toplevel.fa.gz
 gunzip -c Zea_mays.AGPv4.dna.toplevel.fa.gz > Zea_mays.AGPv4.fa
 ```
-(Optional) If you have Aspera-connect on your machine, feel free to prefetch SRR2960981.sra and place in data/reads/ folder to make the fastq-dump step faster.
 
-5. Run snakemake!
+5. Check the reference genome you downloaded for extraneous sequences you don't care about.
+
+  For example, there may be plastid DNA or unincorporated contigs. Run the following command to see the headers for all your sequences.
+
+  ```
+grep "^>" Zea_mays.AGPv4.fa
+```
+
+  You should see 10 nuclear chromosomes, 2 plastids, and a bunch of contigs. Run the following command to save the headers for only the 10 chromosomes into `Zea_mays.AGPv4.keep`:
+
+  ```
+grep "^>" Zea_mays.AGPv4.fa | head -n 10 > Zea_mays.AGPv4.keep
+```
+
+  You could also use copy-paste with the command-line text editor Vim.
+
+6. (Optional) If you have Aspera-connect on your machine, feel free to prefetch SRR2960981.sra and place in data/reads/ folder to make the fastq-dump step faster.
+
+7. Run snakemake!
 ```
 cd ../..  # Go back up to maize-by-michelangelo directory
 snakemake --cores 16

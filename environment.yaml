@@ -19,3 +19,4 @@ dependencies:
   - snakemake=5.4.5
   - unzip=6.0
   - wget=1.20.1
+  - vim=8.1.1343
