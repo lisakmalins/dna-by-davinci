@@ -26,6 +26,7 @@ coverage = 34 #TODO write rule to calculate coverage instead of hardcoding
 lower = round((45 - 17 + 1) * coverage * 0.375)
 upper = round((45 - 17 + 1) * coverage * 1.8125)
 
+# Testing pipeline stepwise
 rule targets:
     params:
         lb=lower,
@@ -33,7 +34,18 @@ rule targets:
     input:
         expand("data/kmer-counts/{p}{read}_17mer_histo.txt", p=PREFIX, read=READS),
         expand("data/kmer-counts/{p}{read}_17mer_dumps.fa", p=PREFIX, read=READS),
-        expand("data/maps/{genome}_45mers_unfiltered.sam", g = GENOMES),
+        expand("data/maps/{genome}_45mers_unfiltered.sam", genome=GENOMES) #,
+        #expand("data/scores/{genome}_45mers_{p}{read}_scores_histo.txt", zip, genome=GENOMES, p=PREFIX, read=READS),
+        #expand("data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed", zip, genome=GENOMES, p=PREFIX, read=READS, lower=lower, upper=upper)
+
+rule targets_final:
+    params:
+        lb=lower,
+        ub=upper
+    input:
+        expand("data/kmer-counts/{p}{read}_17mer_histo.txt", p=PREFIX, read=READS),
+        #expand("data/kmer-counts/{p}{read}_17mer_dumps.fa", p=PREFIX, read=READS),
+        #expand("data/maps/{genome}_45mers_unfiltered.sam", g = GENOMES),
         expand("data/scores/{genome}_45mers_{p}{read}_scores_histo.txt", zip, genome=GENOMES, p=PREFIX, read=READS),
         expand("data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed", zip, genome=GENOMES, p=PREFIX, read=READS, lower=lower, upper=upper)
 
@@ -146,8 +158,25 @@ rule get_oligos:
     shell:
         "python GetOligos/GetOligos.py {input} 45 3 {output}"
 
+rule bwa_index:
+    input:
+        "data/seqs/{genome}.fa",
+    output:
+        "data/seqs/{genome}.fa.amb",
+        "data/seqs/{genome}.fa.ann",
+        "data/seqs/{genome}.fa.bwt",
+        "data/seqs/{genome}.fa.pac",
+        "data/seqs/{genome}.fa.sa"
+    shell:
+        "bwa index {input}"
+
 rule map_oligos:
     input:
+        "data/seqs/{genome}.fa.amb",
+        "data/seqs/{genome}.fa.ann",
+        "data/seqs/{genome}.fa.bwt",
+        "data/seqs/{genome}.fa.pac",
+        "data/seqs/{genome}.fa.sa",
         genome="data/seqs/{genome}.fa",
         oligos="data/oligos/{genome}_45mers.fa"
     output:
