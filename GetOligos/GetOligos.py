@@ -190,7 +190,7 @@ try:
 
         # Print k-mers until header encountered
         while True:
-            output.write(">" + str(id) + "_" + str(kmer.index) + " \n")
+            output.write(">" + str(id) + "_" + str(kmer.index) + "\n")
             output.write(kmer.seq + "\n")
             try:
                 kmer.Advance(ReadChars(source, 3))
