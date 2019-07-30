@@ -6,6 +6,8 @@
 Python program to filter hybridization oligos using bwa and primer3.
 Based on bwa.py and primer3_filter.py from Chorus2 by zhangtaolab on GitHub.
 
+Filtering ranges can be configured with Snakemake.
+
 Example command:
 python3 FilterOligos.py unfiltered.sam filtered.sam
 """
@@ -20,45 +22,51 @@ except ImportError:
 def bwa_filter(line, min_AS=45, max_XS=31):
     """
     :param line: line of sam file
-    :param min_AS: min AS:i score, suggest probe length
-    :param max_XS: max XS:i score, suggest probe length * homology
+    :param min_AS: minimum alignment score (sam tag AS:i:), ideally probe length
+    :param max_XS: maximum suboptimal alignment score (sam tag XS:i), ideally probe length * homology
     :return: true to filter out line, false to keep
     """
 
-    splitline = line.split('\t')
-    try:
-        AS_block = splitline[-2]
-        XS_block = splitline[-1]
-        assert AS_block[:5] == "AS:i:" and XS_block[:5] == "XS:i:" , "AS and XS not last two blocks"
-    except AssertionError:
-        for b in splitline:
-            if b[:5] == "AS:i:":
-                AS_block = b
-            elif b[:5] == "XS:i:":
-                XS_block = b
+    fields = line.split('\t')
 
+    # AS and XS usually last two fields but not always
+    try:
+        AS_field = fields[-2]
+        XS_field = fields[-1]
+        assert AS_field[:5] == "AS:i:" and XS_field[:5] == "XS:i:" , "AS and XS not last two blocks"
+
+    except AssertionError:
+        # Check all fields if necessary
+        for f in fields:
+            if f[:5] == "AS:i:":
+                AS_field = f
+            elif f[:5] == "XS:i:":
+                XS_field = f
         try:
-            assert AS_block[:5] == "AS:i:" and XS_block[:5] == "XS:i:" , "AS and XS not last two blocks"
-            # print("Catastrophe avoided (last item was " + splitline[-1].rstrip('\n') + ")")
+            assert AS_field[:5] == "AS:i:" and XS_field[:5] == "XS:i:"
         except AssertionError:
             print("AS and XS not found in following line:")
             print(line)
+            return True
 
-    AS_score = int(AS_block[5:])
-    XS_score = int(XS_block[5:])
+    try:
+        AS_score = int(AS_field[5:])
+        XS_score = int(XS_field[5:])
+    except ValueError:
+        print("Could not parse integers from AS and XS in following line:")
+        print(line, AS_field, XS_field)
+        return True
 
-    # If the alignment score is less than the minimum
-    # or the suboptimal alignment score is greater than the maximum,
-    # return true (filter out this sequence because we don't like it)
+    # If the alignment score < minimum or suboptimal alignment score > maximum,
+    # return true (filter this sequence because it maps poorly)
     if (AS_score < min_AS) or (XS_score >= max_XS):
         return True
 
-    # Otherwise, if the scores are within range,
-    # return false (do not filter)
+    # If the scores are within range, return false (do not filter)
     else:
         return False
 
-# Filter out derpy oligos
+# Filter out oligos that would behave unexpectedly as probes
 def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
     """
     :param sequence: sequence of oligo
@@ -69,8 +77,7 @@ def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
     """
 
     # Get sequence from line passed to function
-    mapinfo = line.split('\t')
-    sequence = mapinfo[9]
+    sequence = line.split('\t')[9]
 
     # Calculate
     TM = primer3.calcTm(sequence)
@@ -89,6 +96,7 @@ def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
     elif (TM - HTM) < min_diff_TM:
         return True
 
+    # If sequence will make a good probe, return false (do not filter)
     else:
         return False
 
@@ -123,8 +131,6 @@ if __name__ == '__main__':
     if write_rejected:
         rejects = open(output.name.rsplit('.', 1)[0] + "_bwa_rejects.sam", 'w'), \
         open(output.name.rsplit('.', 1)[0] + "_primer3_rejects.sam", 'w')
-    else:
-        rejects = False
 
     # Read parameters from Snakefile or use defaults
     try:
@@ -153,21 +159,22 @@ if __name__ == '__main__':
     if write_rejected:
         print("Writing rejects to " + rejects[0].name + " " + rejects[1].name)
 
-    # Iterate over lines in sam file passed to program
+
+    # Loop through sam file
     for line in source.readlines():
 
-        # Print headers without touching them
+        # Output all headers
         if line[0] == '@':
             output.write(line)
             continue
 
-        # Discard lines that do not pass BWA filter
+        # Discard lines that fail BWA filter
         elif bwa_filter(line, min_AS, max_XS):
             if write_rejected:
                 rejects[0].write(line)
             continue
 
-        # Discard lines that do not pass primer3 filter
+        # Discard lines that fail primer3 filter
         elif primer3_filter(line, min_TM, max_HTM, min_diff_TM):
             if write_rejected:
                 rejects[1].write(line)
