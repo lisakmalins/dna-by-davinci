@@ -33,6 +33,7 @@ rule targets:
     input:
         expand("data/kmer-counts/{p}{read}_17mer_histo.txt", p=PREFIX, read=READS),
         expand("data/kmer-counts/{p}{read}_17mer_dumps.fa", p=PREFIX, read=READS),
+        expand("data/maps/{genome}_45mers_unfiltered.sam", g = GENOMES),
         expand("data/scores/{genome}_45mers_{p}{read}_scores_histo.txt", zip, genome=GENOMES, p=PREFIX, read=READS),
         expand("data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed", zip, genome=GENOMES, p=PREFIX, read=READS, lower=lower, upper=upper)
 
@@ -137,14 +138,13 @@ rule jellyfish_histo:
 #         """
 
 ###--------- Slice genome into overlapping 45-mers, map, and filter ----------###
-#TODO remove header class dependency
 rule get_oligos:
     input:
         "data/seqs/{genome}.fa"
     output:
         "data/oligos/{genome}_45mers.fa"
     shell:
-        "python {input} 45 3 {output}"
+        "python GetOligos.py {input} 45 3 {output}"
 
 rule map_oligos:
     input:
