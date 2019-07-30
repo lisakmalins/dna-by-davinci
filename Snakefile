@@ -144,7 +144,7 @@ rule get_oligos:
     output:
         "data/oligos/{genome}_45mers.fa"
     shell:
-        "python GetOligos.py {input} 45 3 {output}"
+        "python GetOligos/GetOligos.py {input} 45 3 {output}"
 
 rule map_oligos:
     input:
