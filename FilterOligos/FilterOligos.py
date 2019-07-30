@@ -14,11 +14,10 @@ import sys
 try:
     import primer3
 except ImportError:
-    print("Primer3 not installed")
-    exit(1)
+    exit("primer3-py not installed")
 
 # Filter out sequences with less than 70% homology
-def bwa_filter(line, min_AS, max_XS):
+def bwa_filter(line, min_AS=45, max_XS=31):
     """
     :param line: line of sam file
     :param min_AS: min AS:i score, suggest probe length
@@ -93,42 +92,66 @@ def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
     else:
         return False
 
-# Set up source and output files (returns tuple of file objects)
-def setupio():
-    # Read arguments from command line
-    try:
-        source_name = sys.argv[1]
-        output_name = sys.argv[2]
-        # rejected_name = sys.argv[3]
-
-    # Use hard-codes file names if arguments not given
-    except IndexError:
-        source_name = "monkeywrench.sam"
-        output_name = "dungeonmap_output2.sam"
-        # rejected_name = "dungeonmap_rejects2.sam"
-        # rejected_b_name = "dungeonmap_rejects_b2.sam"
-        # rejected_p_name = "dungeonmap_rejects_p2.sam"
-
-    # Open source file in read-only mode
-    source = open(source_name, 'r')
-
-    # Set up file output
-    output = open(output_name, 'w')
-    # rejected = open(rejected_name, 'w')
-    # rejected_b = open(rejected_b_name, 'w')
-    # rejected_p = open(rejected_p_name, 'w')
-
-    # return source, output, rejected, rejected_b, rejected_p
-    return source, output
-
 #-------------------main-----------------------
 
 if __name__ == '__main__':
 
     # Set up source and output files
-    # source, output, rejected, rejected_b, rejected_p = setupio()
-    source, output = setupio()
+    usage = "Usage: python3 FilterOligos.py unfiltered.sam filtered.sam"
 
+    # Read arguments from Snakefile
+    try:
+        source = open(snakemake.input[0], 'r')
+        output = open(snakemake.output[0], 'w')
+        write_rejected = snakemake.params.write_rejected
+    # Or, read arguments from command line
+    except NameError:
+        try:
+            source = open(sys.argv[1], 'r')
+            output = open(sys.argv[2], 'w')
+        except IndexError:
+            exit(usage)
+        except FileNotFoundError as e:
+            exit("File " + e.filename + " not found.\n" + usage)
+
+    # Default do not write rejects unless specified in Snakefile
+    try:
+        write_rejected = snakemake.params.write_rejected
+    except NameError:
+        write_rejected = False
+
+    if write_rejected:
+        rejects = open(output.name.rsplit('.', 1)[0] + "_bwa_rejects.sam", 'w'), \
+        open(output.name.rsplit('.', 1)[0] + "_primer3_rejects.sam", 'w')
+    else:
+        rejects = False
+
+    # Read parameters from Snakefile or use defaults
+    try:
+        min_AS = snakemake.params.bwa_min_AS
+        max_XS = snakemake.params.bwa_max_XS
+        min_TM = snakemake.params.primer3_min_TM
+        max_HTM = snakemake.params.primer3_max_HTM
+        min_diff_TM = snakemake.params.primer3_min_diff_TM
+        print("Filtering by custom parameters:")
+    except NameError:
+        min_AS = 45
+        max_XS = 31
+        min_TM = 37
+        max_HTM = 35
+        min_diff_TM = 10
+        print("Filtering by default parameters:")
+
+    # Echo arguments to user
+    print("min_AS = " + str(min_AS))
+    print("max_XS = " + str(max_XS))
+    print("min_TM = " + str(min_TM))
+    print("max_HTM = " + str(max_HTM))
+    print("min_diff_TM = " + str(min_diff_TM))
+
+    print("Writing filtered sam to " + output.name)
+    if write_rejected:
+        print("Writing rejects to " + rejects[0].name + " " + rejects[1].name)
 
     # Iterate over lines in sam file passed to program
     for line in source.readlines():
@@ -138,16 +161,19 @@ if __name__ == '__main__':
             output.write(line)
             continue
 
-        elif bwa_filter(line, 45, 31):
-            # rejected.write(line.rstrip('\n') + " (bwa_filter)\n")
-            # rejected_b.write(line)
+        # Discard lines that do not pass BWA filter
+        elif bwa_filter(line, min_AS, max_XS):
+            if write_rejected:
+                rejects[0].write(line)
             continue
 
-        elif primer3_filter(line, 37, 35, 10):
-            # rejected.write(line.rstrip('\n') + " (primer3_filter)\n")
-            # rejected_p.write(line)
+        # Discard lines that do not pass primer3 filter
+        elif primer3_filter(line, min_TM, max_HTM, min_diff_TM):
+            if write_rejected:
+                rejects[1].write(line)
             continue
 
+        # Write lines that pass both filters
         else:
             output.write(line)
 

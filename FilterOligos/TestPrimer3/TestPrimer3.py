@@ -29,21 +29,18 @@ def smiley(bool):
 
 # Set up source and output files (returns tuple of file objects)
 def setupio():
-    # Read arguments from command line
+    usage = "Usage: python3 TestPrimer3.py {sam file to evaluate}"
     try:
-        source_name = sys.argv[1]
-        output_name = sys.argv[2]
-
-    # Use hard-codes file names if arguments not given
+        source = open(sys.argv[1], 'r')
     except IndexError:
-        source_name = "test_rejects_p3only.sam"
-        output_name = "/dev/stdout"
+        exit(usage)
+    except FileNotFoundError as e:
+        exit("File " + e.filename + " not found.\n" + usage)
 
-    # Open source file in read-only mode
-    source = open(source_name, 'r')
-
-    # Set up file output
-    output = open(output_name, 'w')
+    try:
+        output = open(sys.argv[2], 'w')
+    except IndexError:
+        output = open("/dev/stdout", 'w')
 
     return source, output
 

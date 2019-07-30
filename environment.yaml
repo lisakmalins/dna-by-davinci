@@ -9,6 +9,7 @@ dependencies:
   - bwa=0.7.17
   - graphviz=2.40.1
   - jellyfish=2.2.10
+  - primer3-py=0.5.4
   - python=3.7.3
   - r-base=3.6.0
   - r-dplyr=0.8.3
