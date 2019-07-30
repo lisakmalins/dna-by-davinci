@@ -17,6 +17,12 @@ python GetOligos.py agra_cadabra_genome.fa 45 3 agra_cadabra_45mers.fa
 
 import sys
 from os import stat
+from time import ctime
+try:
+    from time import process_time
+except:
+    from time import clock as process_time #python2
+from datetime import timedelta
 
 class HeaderException(Exception):
     pass
@@ -123,8 +129,8 @@ source, mer_size, step_size, output, log, keep = SetupIO()
 log.write("Log file for GetOligos.py\n")
 log.write("Genome file: " + source.name + "\n")
 log.write("Oligo size: " + str(mer_size))
-log.write("Step size: " + str(step_size) + "\n")
-log.write("Sequences to keep read from: " + keep.name + "\n")
+log.write(" Step size: " + str(step_size) + "\n")
+log.write("Sequences to keep read from: " + keep.name + "\n\n")
 
 # Read headers from keep file and verify they all have unique ID's
 goodheaders = keep.readlines()
@@ -162,7 +168,10 @@ percent = 10
 
 print("Reading " + str(mer_size) + "-mers with step size of " + str(step_size) + \
 " from " + source.name + " and writing to " + output.name)
-print("Logging to :" + log.name)
+print("Logging to: " + log.name)
+print("Genome slicing into oligos beginning at " + ctime())
+log.write("\nGenome slicing into oligos beginning at " + ctime() + "\n\n")
+time0 = process_time()
 
 # Create Kmer object
 kmer = Kmer()
@@ -193,6 +202,13 @@ try:
 # Aaaaaaand stick the landing
 except (IndexError, EOFError) as e:
     source.close()
-    print("Genome slicing in to oligos finished successfully.")
-    print("Progress messages may not have reached 100% because of ignored sequences.")
+
+    proc_time = process_time() - time0
+
     print("Finished writing " + str(mer_size) + "-mers to " + output.name)
+    print("Program finished successfully at " + ctime())
+    print("Total time " + str(timedelta(seconds=proc_time)) + " (" + str(proc_time) + " seconds)")
+    print("Progress messages may not have reached 100% because of ignored sequences.")
+    print("Log available at " + log.name)
+    log.write("\nGenome slicing into oligos finished successfully at " + ctime() + "\n")
+    log.write("Total time " + str(timedelta(seconds=proc_time)) + " (" + str(proc_time) + " seconds)\n")
