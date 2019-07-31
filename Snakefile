@@ -34,9 +34,9 @@ rule targets:
     input:
         expand("data/kmer-counts/{p}{read}_17mer_histo.txt", p=PREFIX, read=READS),
         expand("data/kmer-counts/{p}{read}_17mer_dumps.fa", p=PREFIX, read=READS),
-        expand("data/maps/{genome}_45mers_unfiltered.sam", genome=GENOMES) #,
-        #expand("data/scores/{genome}_45mers_{p}{read}_scores_histo.txt", zip, genome=GENOMES, p=PREFIX, read=READS),
-        #expand("data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed", zip, genome=GENOMES, p=PREFIX, read=READS, lower=lower, upper=upper)
+        expand("data/maps/{genome}_45mers_unfiltered.sam", genome=GENOMES),
+        expand("data/scores/{genome}_45mers_{p}{read}_scores_histo.txt", zip, genome=GENOMES, p=PREFIX, read=READS),
+        expand("data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed", zip, genome=GENOMES, p=PREFIX, read=READS, lower=lower, upper=upper)
 
 rule targets_final:
     params:
@@ -184,16 +184,22 @@ rule map_oligos:
     threads:
         12
     shell:
-        "bwa mem -t {threads} {input.genome} {input.oligos} > output"
+        "bwa mem -t {threads} {input.genome} {input.oligos} > {output}"
 
-#TODO make the bwa and primer3 thresholds into parameters
 rule filter_oligos:
     input:
         "data/maps/{genome}_45mers_unfiltered.sam"
     output:
         "data/maps/{genome}_45mers_filtered.sam"
-    shell:
-        "python FilterOligos/FilterOligos.py {input} {output}"
+    params:
+        bwa_min_AS=45,
+        bwa_max_XS=31,
+        primer3_min_TM=37,
+        primer3_max_HTM=35,
+        primer3_min_diff_TM=10,
+        write_rejected=False
+    script:
+        "FilterOligos/FilterOligos.py"
 
 
 ###------------------- Calculate k-mer scores for 45-mers --------------------###
