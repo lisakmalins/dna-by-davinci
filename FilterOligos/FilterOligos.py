@@ -13,6 +13,7 @@ python3 FilterOligos.py unfiltered.sam filtered.sam
 """
 
 import sys
+from os import stat
 try:
     import primer3
 except ImportError:
@@ -174,11 +175,18 @@ if __name__ == '__main__':
     print(msg)
     log.write("\n" + msg)
 
+    # Setup status messages
+    filelength = float(stat(source.name).st_size)
+    percent = 10
+
     print("Filter beginning at " + ctime())
     log.write("\nFiltering began at " + ctime())
 
     # Loop through sam file
     for line in source.readlines():
+        if (source.tell() / filelength * 100) >=percent:
+            print("Progress: " + str(percent) + "% (" + ctime() + ")")
+            percent += 10
 
         # Output all headers
         if line[0] == '@':
