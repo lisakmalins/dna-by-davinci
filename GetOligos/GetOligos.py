@@ -130,7 +130,8 @@ log.write("Log file for GetOligos.py\n")
 log.write("Genome file: " + source.name + "\n")
 log.write("Oligo size: " + str(mer_size))
 log.write(" Step size: " + str(step_size) + "\n")
-log.write("Sequences to keep read from: " + keep.name + "\n\n")
+log.write("Sequences to keep read from: " + keep.name + "\n")
+log.write("Oligos written to: " + output.name + "\n\n")
 
 # Read headers from keep file and verify they all have unique ID's
 goodheaders = keep.readlines()
