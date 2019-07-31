@@ -17,6 +17,12 @@ try:
     import primer3
 except ImportError:
     exit("primer3-py not installed")
+from time import ctime
+try:
+    from time import process_time
+except ImportError:
+    from time import clock as process_time
+from datetime import timedelta
 
 # Filter out sequences with less than 70% homology
 def bwa_filter(line, min_AS=45, max_XS=31):
@@ -103,6 +109,7 @@ def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
 #-------------------main-----------------------
 
 if __name__ == '__main__':
+    starttime = process_time()
 
     # Set up source and output files
     usage = "Usage: python3 FilterOligos.py unfiltered.sam filtered.sam"
@@ -122,6 +129,13 @@ if __name__ == '__main__':
         except FileNotFoundError as e:
             exit("File " + e.filename + " not found.\n" + usage)
 
+    log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
+    log.write("Log file for FilterOligos.py")
+    log.write("\nInput file to filter: " + source.name)
+    log.write("\nFiltered output file: " + output.name)
+
+    print("Filtering oligos from " + source.name + " and writing to " + output.name)
+
     # Default do not write rejects unless specified in Snakefile
     try:
         write_rejected = snakemake.params.write_rejected
@@ -131,6 +145,8 @@ if __name__ == '__main__':
     if write_rejected:
         rejects = open(output.name.rsplit('.', 1)[0] + "_bwa_rejects.sam", 'w'), \
         open(output.name.rsplit('.', 1)[0] + "_primer3_rejects.sam", 'w')
+        log.write("\nRejects written to: " + rejects[0].name + ", " + rejects[1].name)
+        print("Writing rejects to " + rejects[0].name + ", " + rejects[1].name)
 
     # Read parameters from Snakefile or use defaults
     try:
@@ -139,26 +155,27 @@ if __name__ == '__main__':
         min_TM = snakemake.params.primer3_min_TM
         max_HTM = snakemake.params.primer3_max_HTM
         min_diff_TM = snakemake.params.primer3_min_diff_TM
-        print("Filtering by custom parameters:")
+        msg = "Filtering by custom parameters:"
     except NameError:
         min_AS = 45
         max_XS = 31
         min_TM = 37
         max_HTM = 35
         min_diff_TM = 10
-        print("Filtering by default parameters:")
+        msg = "Filtering by default parameters:"
 
-    # Echo arguments to user
-    print("min_AS = " + str(min_AS))
-    print("max_XS = " + str(max_XS))
-    print("min_TM = " + str(min_TM))
-    print("max_HTM = " + str(max_HTM))
-    print("min_diff_TM = " + str(min_diff_TM))
+    # Echo arguments
+    msg += "\nmin_AS = " + str(min_AS)
+    msg += "\nmax_XS = " + str(max_XS)
+    msg += "\nmin_TM = " + str(min_TM)
+    msg += "\nmax_HTM = " + str(max_HTM)
+    msg += "\nmin_diff_TM = " + str(min_diff_TM)
 
-    print("Writing filtered sam to " + output.name)
-    if write_rejected:
-        print("Writing rejects to " + rejects[0].name + " " + rejects[1].name)
+    print(msg)
+    log.write("\n" + msg)
 
+    print("Filter beginning at " + ctime())
+    log.write("\nFiltering began at " + ctime())
 
     # Loop through sam file
     for line in source.readlines():
@@ -187,3 +204,13 @@ if __name__ == '__main__':
 
     # Close file
     source.close()
+
+    endtime = process_time()
+    proc_time = endtime - starttime
+
+    msg = "Filtering completed successfully at " + ctime() + \
+    "\nRun time: " + str(timedelta(seconds=proc_time)) + " (total seconds: " + str(proc_time) + ")"
+    log.write("\n" + msg)
+    print(msg)
+    print("Filtered oligos written to " + output.name)
+    print("Log written to " + log.name)
