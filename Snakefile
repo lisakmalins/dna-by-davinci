@@ -211,7 +211,7 @@ rule calc_scores:
     output:
         "data/scores/{genome}_45mers_{p}{read}_scores.sam"
     shell:
-        "python3 CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
+        "python CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
 
 rule score_histogram:
     input:
@@ -219,7 +219,7 @@ rule score_histogram:
     output:
         "data/scores/{genome}_45mers_{p}{read}_scores_histo.txt"
     shell:
-        "python3 ScoresHisto/ScoresHistogram.py {input} {output}"
+        "python ScoresHisto/ScoresHistogram.py {input} {output}"
 
 rule score_select:
     input:
@@ -227,7 +227,7 @@ rule score_select:
     output:
         "data/scores/{genome}_45mers_{p}{read}_scores_{lower}_{upper}.sam"
     shell:
-        "python3 SelectScores/SelectScores.py {input} {lower} {upper} {output}"
+        "python SelectScores/SelectScores.py {input} {lower} {upper} {output}"
 
 
 ###-------------------- Generate coverage histogram data ---------------------###

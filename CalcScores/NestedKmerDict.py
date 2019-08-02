@@ -39,6 +39,7 @@ class NestedKmerDict():
         print("Reading kmer counts from file " + source.name + "...")
         print("Logging to " + log.name)
         log.write("> Kmer loading from " + source.name + " began at time " + ctime() + "\n")
+        log.flush()
         line = source.readline()
 
         while line:
@@ -100,6 +101,7 @@ class NestedKmerDict():
         log.write("> Kmer loading from " + source.name + " completed at time " + ctime() + "\n")
         log.write("> Load time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n")
         log.write("> Total size in memory is " + str(self.cur_size) + " bytes for " + str(self.num_entries) + " entries\n")
+        log.flush()
 
         # Print help if running in interactive mode
         if not sys.argv[0]:
