@@ -87,8 +87,8 @@ def CalcFromSam(nkd, oligos, output, log, fast=True):
     print(msg)
     print("Log written to " + log.name)
 
-    oligos.close()
-    output.close()
+    #oligos.close()
+    #output.close()
 
     return
 
@@ -132,5 +132,10 @@ log.flush()
 # Setup nested kmer dictionary
 nkd = NestedKmerDict()
 nkd.Populate(dump, log)
+dump.close()
 
 CalcFromSam(nkd, oligos, output, log)
+oligos.close()
+output.close()
+log.close()
+exit(0)
