@@ -27,7 +27,7 @@ except:
 from datetime import timedelta
 
 
-def CalcFromSam(nkd, oligos, output, log, fast=True):
+def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=True):
     if isinstance(oligos, str):
         oligos = open(oligos, 'r')
     if isinstance(output, str):
@@ -39,10 +39,10 @@ def CalcFromSam(nkd, oligos, output, log, fast=True):
     log = open(log.name, 'a')
     log.write("> Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime() + "\n")
     log.write("> Output file of 45-mers and k-mer scores = " + output.name + "\n")
-    log.write("> Fast mode is " +  "on\n" if fast else "off\n")
+    log.write("> Fast mode is " + ("on\n" if fast else "off\n"))
     print("Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime())
     print("Output file of 45-mers and k-mer scores = " + output.name)
-    print("Fast mode is " +  "on" if fast else "off")
+    print("Fast mode is " + ("on" if fast else "off"))
 
     # Read 45-mers and calculate k-mer scores
     line = oligos.readline()
@@ -69,8 +69,9 @@ def CalcFromSam(nkd, oligos, output, log, fast=True):
 
             # If 17-mer not found in dictionary, note in log and skip it
             except:
-                log.write("No dictionary entry for " + seq + \
-                " from source oligo " + line.split('\t')[0] + "\n")
+                if log_missing:
+                    log.write("No dictionary entry for " + seq + \
+                    " from source oligo " + line.split('\t')[0] + "\n")
                 continue
 
         # Write line with k-mer score appended
@@ -89,6 +90,7 @@ def CalcFromSam(nkd, oligos, output, log, fast=True):
 
     #oligos.close()
     #output.close()
+    print("Attempting to return to main")
 
     return
 
@@ -134,8 +136,34 @@ nkd = NestedKmerDict()
 nkd.Populate(dump, log)
 dump.close()
 
-CalcFromSam(nkd, oligos, output, log)
+CalcFromSam(nkd, oligos, output, log, fast=False, log_missing=False)
+print("Back in main")
 oligos.close()
+print("Oligos closed")
 output.close()
+print("Output closed")
 log.close()
-exit(0)
+print("Log closed")
+
+try:
+    print("NKD num entries: " + str(nkd.num_entries))
+except:
+    print("Failed to display nkd size (first attempt, not expected)")
+    pass
+
+try:
+    del nkd
+    print("Destroyed nkd")
+except:
+    print("Could not destroy nkd")
+
+try:
+    print("Num entries: " + str(nkd.num_entries))
+except:
+    pass
+    print("Failed to access nkd size (destructor successful)")
+    
+print("After attempt to destroy nkd")
+print("Now attempting to exit")
+exit("So long and thanks for all the fish")
+print("This is after exit statement")
