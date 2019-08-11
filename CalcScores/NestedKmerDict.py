@@ -23,6 +23,10 @@ class NestedKmerDict():
         self.cur_size = 0
         self.dup_found = False
 
+    def __del__(self):
+        del self.counts
+        print("Nested kmer dict dying")
+
     # Read 17-mers from Jellyfish dump file
     # Accepts string of filename or file object
     def Populate(self, source, log=open("/dev/fd/1", 'w')):
