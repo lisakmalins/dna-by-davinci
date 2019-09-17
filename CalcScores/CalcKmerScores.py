@@ -137,33 +137,3 @@ nkd.Populate(dump, log)
 dump.close()
 
 CalcFromSam(nkd, oligos, output, log, fast=False, log_missing=False)
-print("Back in main")
-oligos.close()
-print("Oligos closed")
-output.close()
-print("Output closed")
-log.close()
-print("Log closed")
-
-try:
-    print("NKD num entries: " + str(nkd.num_entries))
-except:
-    print("Failed to display nkd size (first attempt, not expected)")
-    pass
-
-try:
-    del nkd
-    print("Destroyed nkd")
-except:
-    print("Could not destroy nkd")
-
-try:
-    print("Num entries: " + str(nkd.num_entries))
-except:
-    pass
-    print("Failed to access nkd size (destructor successful)")
-    
-print("After attempt to destroy nkd")
-print("Now attempting to exit")
-exit("So long and thanks for all the fish")
-print("This is after exit statement")
