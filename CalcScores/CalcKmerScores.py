@@ -27,7 +27,12 @@ except:
 from datetime import timedelta
 
 
-def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=True):
+# Calculate k-mer scores of oligos from sam file.
+# Needs nested k-mer dictionary object, oligo source file, and output file
+# fast=False will check both forward and reverse k-mers and log if both are found.
+# fast=True will only check for reverse if forward not found.
+# log_missing should be either False or an output file object.
+def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False):
     if isinstance(oligos, str):
         oligos = open(oligos, 'r')
     if isinstance(output, str):
@@ -37,14 +42,15 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=True):
 
     # Begin log file with context
     log = open(log.name, 'a')
-    log.write("> Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime() + "\n")
-    log.write("> Output file of 45-mers and k-mer scores = " + output.name + "\n")
-    log.write("> Fast mode is " + ("on\n" if fast else "off\n"))
+    log.write("Beginning k-mer score calculation for oligo file " + oligos.name + " at " + ctime() + "\n")
+    log.write("Output file of 45-mers and k-mer scores = " + output.name + "\n")
+    log.write("Fast mode is " + ("on\n" if fast else "off\n"))
     print("Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime())
     print("Output file of 45-mers and k-mer scores = " + output.name)
     print("Fast mode is " + ("on" if fast else "off"))
 
     # Read 45-mers and calculate k-mer scores
+    num_missing = 0
     line = oligos.readline()
     while line:
         # Print headers without touching them
@@ -69,8 +75,9 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=True):
 
             # If 17-mer not found in dictionary, note in log and skip it
             except:
+                num_missing += 1
                 if log_missing:
-                    log.write("No dictionary entry for " + seq + \
+                    log_missing.write("No dictionary entry for " + seq + \
                     " from source oligo " + line.split('\t')[0] + "\n")
                 continue
 
@@ -80,17 +87,18 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=True):
         line = oligos.readline()
 
     proc_time = process_time() - time0
-    msg = "Calculation time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")"
-    log.write("> K-mer score calculation for file " + oligos.name + " completed successfully at " + ctime() + "\n")
-    log.write("> " + msg + "\n")
-    log.write("> Scores output at " + output.name + "\n")
-    print("Finished writing k-mers and scores in sam format to " + output.name + " at " + ctime())
-    print(msg)
-    print("Log written to " + log.name)
-
-    #oligos.close()
-    #output.close()
-    print("Attempting to return to main")
+    msg = "Calculation time: " + str(timedelta(seconds=proc_time)) + " (total seconds = " + str(proc_time) + ")\n"
+    log.write("K-mer score calculation for file " + oligos.name + " completed successfully at " + ctime() + "\n")
+    log.write(msg)
+    log.write("Scores output at " + output.name + "\n")
+    log.write("{} k-mers not found in dictionary\n".format(str(num_missing)))
+    sys.stderr.write("Finished writing k-mers and scores in sam format to " + output.name + " at " + ctime() + "\n")
+    sys.stderr.write(msg)
+    sys.stderr.write("Log written to " + log.name + "\n")
+    sys.stderr.write("{} k-mers not found in dictionary\n".format(str(num_missing)))
+    if log_missing:
+        log.write("Missing k-mers written to " + missing.name + "\n")
+        sys.stderr.write("Missing k-mers written to " + missing.name + "\n")
 
     return
 
@@ -124,16 +132,22 @@ assert sys.argv[3][-3:] != "log", "Make sure you specify an output file\n" + usa
 output = open(sys.argv[3], 'w')
 print("Will write scores to " + output.name)
 
-# Open log file
+# Open main log file
 logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.rsplit('.', 1)[0] + ".log"
 log = open(logfile, 'w')
 print("Logging to " + log.name)
-log.write("> Log file for CalcKmerScores.py\n")
+log.write("Log file for CalcKmerScores.py\n")
 log.flush()
+
+# Separate log file for missing k-mers
+log_missing = True
+if log_missing:
+    missing = open(log.name + ".missing", 'w')
+
 
 # Setup nested kmer dictionary
 nkd = NestedKmerDict()
 nkd.Populate(dump, log)
 dump.close()
 
-CalcFromSam(nkd, oligos, output, log, fast=False, log_missing=False)
+CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=missing)
