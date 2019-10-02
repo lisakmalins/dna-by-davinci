@@ -208,10 +208,26 @@ rule calc_scores:
     input:
         dump="data/kmer-counts/{p}{read}_17mer_dumps.fa",
         map="data/maps/{genome}_45mers_filtered.sam"
+    log:
+        "data/scores/{genome}_45mers_{p}{read}_scores.log"
     output:
         "data/scores/{genome}_45mers_{p}{read}_scores.sam"
-    shell:
-        "python CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
+    run:
+        import sys
+        sys.path.insert(1, "../maize-by-michelangelo/CalcScores/")
+        from NestedKmerDict import NestedKmerDict
+        from CalcKmerScores import CalcFromSam
+
+        dump=open(input["dump"], 'r')
+        oligos=open(input["map"], 'r')
+        output=open(output[0], 'w')
+        log=open(log[0], 'w')
+
+        nkd = NestedKmerDict()
+        nkd.Populate(dump, log)
+        dump.close()
+
+        CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False)
 
 rule score_histogram:
     input:

@@ -104,50 +104,52 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False):
 
 # ----------------main-------------------
 
-usage = "Usage: {dump input file} {oligo input file} {scores output file} " \
-"Optional: {custom log file name} {fast mode True/False}"
+if __name__ == "__main__":
 
-if len(sys.argv) < 4 or len(sys.argv) > 6:
-    exit(usage)
+    usage = "Usage: {dump input file} {oligo input file} {scores output file} " \
+    "Optional: {custom log file name} {fast mode True/False}"
 
-# Verify all files found and not garbage before loading dictionary
-# Open jellyfish dump file of 17-mers
-try:
-    dump = open(sys.argv[1], 'r')
-except FileNotFoundError:
-    exit("File " + sys.argv[1] + " not found.")
-print("Will read counts from " + dump.name)
+    if len(sys.argv) < 4 or len(sys.argv) > 6:
+        exit(usage)
 
-# Open file of 45-mers
-try:
-    oligos = open(sys.argv[2], 'r')
-except FileNotFoundError:
-    exit("File " + sys.argv[2] + " not found.")
-print("Will read oligos from " + oligos.name)
+    # Verify all files found and not garbage before loading dictionary
+    # Open jellyfish dump file of 17-mers
+    try:
+        dump = open(sys.argv[1], 'r')
+    except FileNotFoundError:
+        exit("File " + sys.argv[1] + " not found.")
+    print("Will read counts from " + dump.name)
 
-# Remember that one time I named the log but forgot to name the output file
-# and then it wrote the output and the log in the same place lol that was hilarious
-assert sys.argv[3][-3:] != "log", "Make sure you specify an output file\n" + usage
-# Open output file
-output = open(sys.argv[3], 'w')
-print("Will write scores to " + output.name)
+    # Open file of 45-mers
+    try:
+        oligos = open(sys.argv[2], 'r')
+    except FileNotFoundError:
+        exit("File " + sys.argv[2] + " not found.")
+    print("Will read oligos from " + oligos.name)
 
-# Open main log file
-logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.rsplit('.', 1)[0] + ".log"
-log = open(logfile, 'w')
-print("Logging to " + log.name)
-log.write("Log file for CalcKmerScores.py\n")
-log.flush()
+    # Remember that one time I named the log but forgot to name the output file
+    # and then it wrote the output and the log in the same place lol that was hilarious
+    assert sys.argv[3][-3:] != "log", "Make sure you specify an output file\n" + usage
+    # Open output file
+    output = open(sys.argv[3], 'w')
+    print("Will write scores to " + output.name)
 
-# Separate log file for missing k-mers
-log_missing = True
-if log_missing:
-    missing = open(log.name + ".missing", 'w')
+    # Open main log file
+    logfile = sys.argv[4] if len(sys.argv) > 4 else output.name.rsplit('.', 1)[0] + ".log"
+    log = open(logfile, 'w')
+    print("Logging to " + log.name)
+    log.write("Log file for CalcKmerScores.py\n")
+    log.flush()
+
+    # Separate log file for missing k-mers
+    log_missing = True
+    if log_missing:
+        missing = open(log.name + ".missing", 'w')
 
 
-# Setup nested kmer dictionary
-nkd = NestedKmerDict()
-nkd.Populate(dump, log)
-dump.close()
+    # Setup nested kmer dictionary
+    nkd = NestedKmerDict()
+    nkd.Populate(dump, log)
+    dump.close()
 
-CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=missing)
+    CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=missing)
