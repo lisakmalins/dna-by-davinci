@@ -214,7 +214,8 @@ rule calc_scores:
         "data/scores/{genome}_45mers_{p}{read}_scores.sam"
     run:
         import sys
-        sys.path.insert(1, "../maize-by-michelangelo/CalcScores/")
+        import gc
+        sys.path.insert(1, "CalcScores")
         from NestedKmerDict import NestedKmerDict
         from CalcKmerScores import CalcFromSam
 
@@ -228,6 +229,9 @@ rule calc_scores:
         dump.close()
 
         CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False)
+
+        del nkd
+        gc.collect()
 
 rule score_histogram:
     input:

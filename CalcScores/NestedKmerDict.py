@@ -9,6 +9,7 @@ Multiple Jellyfish dump files can be read into same dictionary object.
 """
 
 import sys
+import gc
 from time import ctime
 try:
     from time import process_time
@@ -25,6 +26,7 @@ class NestedKmerDict():
 
     def __del__(self):
         del self.counts
+        gc.collect()
         print("Nested kmer dict dying")
 
     # Read 17-mers from Jellyfish dump file

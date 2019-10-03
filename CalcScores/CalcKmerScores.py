@@ -18,6 +18,7 @@ at close of program and run the following command:
 """
 
 import sys
+import gc
 from NestedKmerDict import NestedKmerDict
 from time import ctime
 try:
@@ -100,6 +101,8 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False):
         log.write("Missing k-mers written to " + missing.name + "\n")
         sys.stderr.write("Missing k-mers written to " + missing.name + "\n")
 
+    del nkd
+    gc.collect()
     return
 
 # ----------------main-------------------
