@@ -18,21 +18,23 @@ except:
 from datetime import timedelta
 
 class NestedKmerDict():
-    def __init__(self):
+    def __init__(self, source=None):
         self.counts = {"": {"": {"": 0}}}
         self.num_entries = 0
         self.cur_size = 0
         self.dup_found = False
+        if source is not None:
+            self.Populate(source)
 
     def __del__(self):
-        sys.stderr.write("Nkd destructor says: Hey I'm running\n")
+        sys.stderr.write("\nNkd destructor says: Hey I'm running\n")
         try:
             sys.stderr.write("Nkd destructor says: Current size: {}\n".format(str(self.Size())))
         except:
             sys.stderr.write("Nkd destructor says: Could not display current size (UNEXPECTED)\n")
 
         try:
-            self.counts.clear()
+            self.Clear()
             sys.stderr.write("Nkd destructor says: Cleared self.counts\n")
         except:
             sys.stderr.write("Nkd destructor says: Could not clear self.counts\n")
@@ -62,6 +64,52 @@ class NestedKmerDict():
         except:
             sys.stderr.write("Nkd destructor says: Could not garbage collect\n")
         sys.stderr.write("Nkd destructor says: Nested kmer dict dying\n")
+
+    # Recursively empty dictionary and print helpful status messages
+    def Clear(self, verbose=False):
+        sys.stderr.write("\nNkd clear says: Hey what's up I'm your friendly neighborhood clear function\n")
+        sys.stderr.write("Nkd clear says: I have {} entries slash {} bytes of memory to clear so feel free to grab a drink...\n".format(self.num_entries, str(self.Size())))
+        self._Clear(self.counts, self.num_entries)
+        sys.stderr.write("Nkd clear says: My work here is done. Back to you Michelangelo\n")
+
+
+    def _Clear(self, obj, orig_num_entries, percent=10, verbose=False, hella_verbose=False, debug_percent=False):
+
+        # When terminal key found, decrement num_entries and return
+        if not isinstance(obj, dict):
+            if verbose:
+                sys.stderr.write("Terminal item found:" + str(obj) + "\n")
+            self.num_entries -= 1
+            return
+
+        # Status counter
+        if debug_percent:
+            print("Num entries: ", self.num_entries)
+            print("percent complete: ", str((1 - self.num_entries / orig_num_entries) * 100))
+            print("Current % counter: " + str(percent))
+        if ((1 - self.num_entries / orig_num_entries) * 100 > percent):
+            # May need to increment more than once for extremely small datasets
+            while ((1 - self.num_entries / orig_num_entries) * 100 > percent + 9.99):
+                percent += 10
+            sys.stderr.write("Garbage collection {}% complete\n".format(str(percent)))
+            percent += 10
+
+        # If current object is a dictionary, recur on all items
+        # After all nested items have returned, clear this level and return
+        if verbose:
+            print("Nested dict found:")
+            if hella_verbose:
+                print(obj)
+
+        for item in obj:
+            if verbose:
+                sys.stderr.write("Recursing on {}\n".format(item))
+            self._Clear(obj[item], orig_num_entries, percent, verbose, hella_verbose)
+
+        obj.clear()
+        gc.collect()
+
+
 
     # Read 17-mers from Jellyfish dump file
     # Accepts string of filename or file object
