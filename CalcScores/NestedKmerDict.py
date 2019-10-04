@@ -27,10 +27,35 @@ class NestedKmerDict():
     def __del__(self):
         sys.stderr.write("Nkd destructor says: Hey I'm running\n")
         try:
+            sys.stderr.write("Nkd destructor says: Current size: {}\n".format(str(self.Size())))
+        except:
+            sys.stderr.write("Nkd destructor says: Could not display current size (UNEXPECTED)\n")
+
+        try:
+            self.counts.clear()
+            sys.stderr.write("Nkd destructor says: Cleared self.counts\n")
+        except:
+            sys.stderr.write("Nkd destructor says: Could not clear self.counts\n")
+
+        try:
+            sys.stderr.write("Nkd destructor says: Current size: {}\n".format(str(self.Size())))
+            # sys.stderr.write("Nkd destructor says: Current contents: \n")
+            # sys.stderr.write(str(self.PrintAll()) + "\n")
+        except:
+            sys.stderr.write("Nkd destructor says: Could not display current size (EXPECTED)\n")
+
+        try:
+            gc.collect()
+            sys.stderr.write("Nkd destructor says: Garbage collected\n")
+        except:
+            sys.stderr.write("Nkd destructor says: Could not garbage collect\n")
+
+        try:
             del self.counts
             sys.stderr.write("Nkd destructor says: Deleted self.counts\n")
         except:
             sys.stderr.write("Nkd destructor says: Could not delete self.counts\n")
+
         try:
             gc.collect()
             sys.stderr.write("Nkd destructor says: Garbage collected\n")
