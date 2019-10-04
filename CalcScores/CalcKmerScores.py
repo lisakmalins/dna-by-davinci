@@ -101,8 +101,18 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False):
         log.write("Missing k-mers written to " + missing.name + "\n")
         sys.stderr.write("Missing k-mers written to " + missing.name + "\n")
 
-    del nkd
-    gc.collect()
+    try:
+        del nkd
+        sys.stderr.write("CalcFromSam says: deleted (reference to) nkd\n")
+    except:
+        sys.stderr.write("CalcFromSam says: could not delete (reference to) nkd\n")
+    try:
+        gc.collect()
+        sys.stderr.write("CalcFromSam says: garbage collected\n")
+    except:
+        sys.stderr.write("CalcFromSam says: Could not garbage collect")
+
+    sys.stderr.write("CalcFromSam says: attempting to return\n")
     return
 
 # ----------------main-------------------

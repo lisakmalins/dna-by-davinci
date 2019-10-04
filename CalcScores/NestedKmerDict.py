@@ -25,9 +25,18 @@ class NestedKmerDict():
         self.dup_found = False
 
     def __del__(self):
-        del self.counts
-        gc.collect()
-        print("Nested kmer dict dying")
+        sys.stderr.write("Nkd destructor says: Hey I'm running\n")
+        try:
+            del self.counts
+            sys.stderr.write("Nkd destructor says: Deleted self.counts\n")
+        except:
+            sys.stderr.write("Nkd destructor says: Could not delete self.counts\n")
+        try:
+            gc.collect()
+            sys.stderr.write("Nkd destructor says: Garbage collected\n")
+        except:
+            sys.stderr.write("Nkd destructor says: Could not garbage collect\n")
+        sys.stderr.write("Nkd destructor says: Nested kmer dict dying\n")
 
     # Read 17-mers from Jellyfish dump file
     # Accepts string of filename or file object

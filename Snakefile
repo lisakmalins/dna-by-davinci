@@ -230,8 +230,33 @@ rule calc_scores:
 
         CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False)
 
-        del nkd
-        gc.collect()
+        try:
+            oligos.close()
+            sys.stderr.write("Snakefile says: oligos closed\n")
+        except:
+            sys.stderr.write("Snakefile says: could not close oligo file\n")
+
+        try:
+            output.close()
+            sys.stderr.write("Snakefile says: scores output closed\n")
+        except:
+            sys.stderr.write("Snakefile says: could not close scores output file\n")
+
+        sys.stderr.write("Snakefile says: attempting to delete nkd\n")
+        try:
+            del nkd
+            sys.stderr.write("Snakefile says: nkd deleted\n")
+        except:
+            sys.stderr.write("Snakefile says: could not delete nkd\n")
+
+        sys.stderr.write("Snakefile says: attempting to garbage collect\n")
+        try:
+            gc.collect()
+            sys.stderr.write("Snakefile says: garbage collected\n")
+        except:
+            sys.stderr.write("Snakefile says: could not garbage collect\n")
+
+        sys.stderr.write("Snakefile says: This is the end my only friend the end\n")
 
 rule score_histogram:
     input:
