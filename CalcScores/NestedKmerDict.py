@@ -75,7 +75,7 @@ class NestedKmerDict():
 
         self._Clear(self.counts, self.num_entries)
 
-        sys.stderr.write("Nkd clear says: My work here is done. Back to you Michelangelo\n")
+        sys.stderr.write("Nkd clear says: My work here is done.\t{}\n".format(ctime()))
 
 
     def _Clear(self, obj, orig_num_entries, level=1, verbose=False, hella_verbose=False, debug_percent=False):
@@ -131,10 +131,13 @@ class NestedKmerDict():
 
                 # Item pop progress counter
                 if ( (1 - (len(obj) / num_top_items)) * 100 > top_progress):
-                    sys.stderr.write("Top-level item removal {} percent complete\n".format(str(top_progress)))
+                    sys.stderr.write("Top-level item removal {} percent complete\t{}\n".format(\
+                    str(top_progress), ctime()))
                     top_progress += 10
+                    gc.collect()
 
             assert len(obj) == 0, "Length of top level is not 0 after clearing"
+            sys.stderr.write("Done popping items at {}\n".format(ctime()))
             del obj
 
         # Extra stats when num_entries nears zero
