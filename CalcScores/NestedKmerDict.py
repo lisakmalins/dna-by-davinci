@@ -19,14 +19,20 @@ from datetime import timedelta
 
 class NestedKmerDict():
     def __init__(self, source=None):
+        # Empty counts dictionary
         self.counts = {"": {"": {"": 0}}}
+
+        # Size info
         self.num_entries = 0
         self.cur_size = 0
+
+        # Whether duplicates found (for logging)
         self.dup_found = False
 
         # Percent cleared (for status messages in clear)
         self.percent_emptied = 0
 
+        # Deluxe constructor: Can populate at same time
         if source is not None:
             self.Populate(source)
 
@@ -88,7 +94,8 @@ class NestedKmerDict():
             while ((1 - self.num_entries / orig_num_entries) * 100 > self.percent_emptied + 9.99):
                 self.percent_emptied += 10
 
-            sys.stderr.write("Garbage collection {}% complete\n".format(str(self.percent_emptied)))
+            sys.stderr.write("Garbage collection {}% complete\t\t {}\n".format(\
+            str(self.percent_emptied), ctime()))
             self.percent_emptied += 10
 
         # When terminal key found, decrement num_entries and return
