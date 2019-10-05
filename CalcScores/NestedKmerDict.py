@@ -23,6 +23,10 @@ class NestedKmerDict():
         self.num_entries = 0
         self.cur_size = 0
         self.dup_found = False
+
+        # Percent cleared (for status messages in clear)
+        self.percent_emptied = 0
+
         if source is not None:
             self.Populate(source)
 
@@ -73,7 +77,19 @@ class NestedKmerDict():
         sys.stderr.write("Nkd clear says: My work here is done. Back to you Michelangelo\n")
 
 
-    def _Clear(self, obj, orig_num_entries, percent=10, verbose=False, hella_verbose=False, debug_percent=False):
+    def _Clear(self, obj, orig_num_entries, verbose=False, hella_verbose=False, debug_percent=False):
+        # Status counter
+        if debug_percent:
+            print("\nNum entries: ", self.num_entries)
+            print("percent complete: ", str((1 - self.num_entries / orig_num_entries) * 100))
+            print("Current % counter: " + str(self.percent_emptied))
+        if ((1 - self.num_entries / orig_num_entries) * 100 > self.percent_emptied):
+            # May need to increment more than once for extremely small datasets
+            while ((1 - self.num_entries / orig_num_entries) * 100 > self.percent_emptied + 9.99):
+                self.percent_emptied += 10
+
+            sys.stderr.write("Garbage collection {}% complete\n".format(str(self.percent_emptied)))
+            self.percent_emptied += 10
 
         # When terminal key found, decrement num_entries and return
         if not isinstance(obj, dict):
@@ -81,18 +97,6 @@ class NestedKmerDict():
                 sys.stderr.write("Terminal item found:" + str(obj) + "\n")
             self.num_entries -= 1
             return
-
-        # Status counter
-        if debug_percent:
-            print("Num entries: ", self.num_entries)
-            print("percent complete: ", str((1 - self.num_entries / orig_num_entries) * 100))
-            print("Current % counter: " + str(percent))
-        if ((1 - self.num_entries / orig_num_entries) * 100 > percent):
-            # May need to increment more than once for extremely small datasets
-            while ((1 - self.num_entries / orig_num_entries) * 100 > percent + 9.99):
-                percent += 10
-            sys.stderr.write("Garbage collection {}% complete\n".format(str(percent)))
-            percent += 10
 
         # If current object is a dictionary, recur on all items
         # After all nested items have returned, clear this level and return
@@ -104,7 +108,7 @@ class NestedKmerDict():
         for item in obj:
             if verbose:
                 sys.stderr.write("Recursing on {}\n".format(item))
-            self._Clear(obj[item], orig_num_entries, percent, verbose, hella_verbose)
+            self._Clear(obj[item], orig_num_entries, verbose, hella_verbose)
 
         obj.clear()
         gc.collect()
