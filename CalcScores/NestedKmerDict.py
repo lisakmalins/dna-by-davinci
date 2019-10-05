@@ -38,16 +38,8 @@ class NestedKmerDict():
 
     def __del__(self):
         sys.stderr.write("\nNkd destructor says: Hey I'm running\n")
-        try:
-            sys.stderr.write("Nkd destructor says: Current size: {}\n".format(str(self.Size())))
-        except:
-            sys.stderr.write("Nkd destructor says: Could not display current size (UNEXPECTED)\n")
 
-        try:
-            self.Clear()
-            sys.stderr.write("Nkd destructor says: Cleared self.counts\n")
-        except:
-            sys.stderr.write("Nkd destructor says: Could not clear self.counts\n")
+        self.Clear()
 
         try:
             sys.stderr.write("Nkd destructor says: Current size: {}\n".format(str(self.Size())))
@@ -78,12 +70,15 @@ class NestedKmerDict():
     # Recursively empty dictionary and print helpful status messages
     def Clear(self, verbose=False):
         sys.stderr.write("\nNkd clear says: Hey what's up I'm your friendly neighborhood clear function\n")
+        sys.stderr.write("Nkd clear says: Let me calculate how much garbage I have to collect\n")
         sys.stderr.write("Nkd clear says: I have {} entries slash {} bytes of memory to clear so feel free to grab a drink...\n".format(self.num_entries, str(self.Size())))
+
         self._Clear(self.counts, self.num_entries)
+
         sys.stderr.write("Nkd clear says: My work here is done. Back to you Michelangelo\n")
 
 
-    def _Clear(self, obj, orig_num_entries, verbose=False, hella_verbose=False, debug_percent=False):
+    def _Clear(self, obj, orig_num_entries, level=1, verbose=False, hella_verbose=False, debug_percent=False):
         # Status counter
         if debug_percent:
             print("\nNum entries: ", self.num_entries)
@@ -115,11 +110,43 @@ class NestedKmerDict():
         for item in obj:
             if verbose:
                 sys.stderr.write("Recursing on {}\n".format(item))
-            self._Clear(obj[item], orig_num_entries, verbose, hella_verbose)
+            self._Clear(obj[item], orig_num_entries, level + 1, verbose, hella_verbose)
 
-        obj.clear()
-        gc.collect()
+        # Clear + delete all inner objects
+        if level > 1:
+            obj.clear()
+            assert len(obj) == 0, "Length of object is not 0 after clearing"
+            del obj
+            gc.collect()
+        # Extra debug for top-level
+        else:
+            sys.stderr.write("FINAL BOSS: top-level reached\n")
+            num_top_items = len(obj)
+            top_progress = 10
+            sys.stderr.write("{} top-level items to remove\n".format(num_top_items))
 
+            # Pop all items
+            while len(obj):
+                obj.popitem()
+
+                # Item pop progress counter
+                if ( (1 - (len(obj) / num_top_items)) * 100 > top_progress):
+                    sys.stderr.write("Top-level item removal {} percent complete\n".format(str(top_progress)))
+                    top_progress += 10
+
+            assert len(obj) == 0, "Length of top level is not 0 after clearing"
+            del obj
+
+        # Extra stats when num_entries nears zero
+        if self.num_entries < 5 and level <= 2:
+            sys.stderr.write(" ".join(["level", str(level), "top-level-length/size/num_entries:\t"]))
+            sys.stderr.write(" / ".join([ str(len(self.counts)), str(self.Size()), str(self.num_entries) + "\n" ] ) )
+
+        # Verify empty before return
+        if level == 1:
+            sys.stderr.write("Immabout to return, here are my contents and top-level length:\n")
+            print(self.PrintAll())
+            print(len(self.counts))
 
 
     # Read 17-mers from Jellyfish dump file
