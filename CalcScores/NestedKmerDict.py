@@ -91,7 +91,7 @@ class NestedKmerDict():
 
             sys.stderr.write("Garbage collection {}% complete\t\t {}\n".format(\
             str(self.percent_emptied), ctime()))
-            self.percent_emptied += 10
+            self.percent_emptied += 10 if self.percent_emptied < 90 else 1
 
         # When terminal key found, decrement num_entries and return
         if not isinstance(obj, dict):
