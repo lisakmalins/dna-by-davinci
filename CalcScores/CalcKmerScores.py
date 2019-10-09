@@ -46,9 +46,9 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False):
     log.write("Beginning k-mer score calculation for oligo file " + oligos.name + " at " + ctime() + "\n")
     log.write("Output file of 45-mers and k-mer scores = " + output.name + "\n")
     log.write("Fast mode is " + ("on\n" if fast else "off\n"))
-    print("Beginning k-mer score calculation for file = " + oligos.name + " at " + ctime())
+    print("\nBeginning k-mer score calculation for file = " + oligos.name + " at " + ctime())
     print("Output file of 45-mers and k-mer scores = " + output.name)
-    print("Fast mode is " + ("on" if fast else "off"))
+    print("Fast mode is " + ("on\n" if fast else "off\n"))
 
     # Read 45-mers and calculate k-mer scores
     num_missing = 0
@@ -103,16 +103,10 @@ def CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False):
 
     try:
         del nkd
-        sys.stderr.write("CalcFromSam says: deleted (reference to) nkd\n")
     except:
         sys.stderr.write("CalcFromSam says: could not delete (reference to) nkd\n")
-    try:
-        gc.collect()
-        sys.stderr.write("CalcFromSam says: garbage collected\n")
-    except:
-        sys.stderr.write("CalcFromSam says: Could not garbage collect")
 
-    sys.stderr.write("CalcFromSam says: attempting to return\n")
+    sys.stderr.write("\nCalcFromSam says: attempting to return to main.\t{}\n".format(ctime()))
     return
 
 # ----------------main-------------------

@@ -37,41 +37,41 @@ class NestedKmerDict():
             self.Populate(source)
 
     def __del__(self):
-        sys.stderr.write("\nNkd destructor says: Hey I'm running\n")
+        sys.stderr.write("\nNkd destructor says: Unloading nested k-mer dictionary from memory\n")
 
         self.Clear()
 
         try:
-            sys.stderr.write("Nkd destructor says: Current size: {}\n".format(str(self.Size())))
-            # sys.stderr.write("Nkd destructor says: Current contents: \n")
-            # sys.stderr.write(str(self.PrintAll()) + "\n")
+            sys.stderr.write("Nkd destructor says: Current size: {} bytes\n".format(str(self.Size())))
         except:
-            sys.stderr.write("Nkd destructor says: Could not display current size (EXPECTED)\n")
+            pass
 
         try:
             gc.collect()
-            sys.stderr.write("Nkd destructor says: Garbage collected\n")
         except:
-            sys.stderr.write("Nkd destructor says: Could not garbage collect\n")
+            pass
 
         try:
             del self.counts
-            sys.stderr.write("Nkd destructor says: Deleted self.counts\n")
+            sys.stderr.write("Nkd destructor says: Deleted counts dictionary\n")
         except:
-            sys.stderr.write("Nkd destructor says: Could not delete self.counts\n")
+            sys.stderr.write("Nkd destructor says: Could not delete counts dictionary\n")
 
         try:
             gc.collect()
-            sys.stderr.write("Nkd destructor says: Garbage collected\n")
         except:
-            sys.stderr.write("Nkd destructor says: Could not garbage collect\n")
-        sys.stderr.write("Nkd destructor says: Nested kmer dict dying\n")
+            pass
+
+        sys.stderr.write("Nkd destructor says: Nested kmer dict removed from memory\n")
 
     # Recursively empty dictionary and print helpful status messages
     def Clear(self, verbose=False):
-        sys.stderr.write("\nNkd clear says: Hey what's up I'm your friendly neighborhood clear function\n")
-        sys.stderr.write("Nkd clear says: Let me calculate how much garbage I have to collect\n")
-        sys.stderr.write("Nkd clear says: I have {} entries slash {} bytes of memory to clear so feel free to grab a drink...\n".format(self.num_entries, str(self.Size())))
+        sys.stderr.write("\nNkd clear says: Starting to clear nested k-mer dictionary from memory.\t{}\n".format(ctime()))
+        sys.stderr.write("Nkd clear says: This process may take 8+ hours. You should see progress updates here.\n")
+        sys.stderr.write("\nNkd clear says: Your task manager may not show this program's memory usage lowering but that is ok.\n")
+        sys.stderr.write("Nkd clear says: To avoid damage to your system's memory, please do not force quit this program unless there are no progress updates for a day.\n")
+        sys.stderr.write("\nNkd clear says: Let me calculate how much garbage I have to collect\n")
+        sys.stderr.write("Nkd clear says: I have {} entries and {} bytes of memory to clear...\n".format(self.num_entries, str(self.Size())))
 
         self._Clear(self.counts, self.num_entries)
 
@@ -79,19 +79,31 @@ class NestedKmerDict():
 
 
     def _Clear(self, obj, orig_num_entries, level=1, verbose=False, hella_verbose=False, debug_percent=False):
-        # Status counter
+        # Debug status counter
         if debug_percent:
             print("\nNum entries: ", self.num_entries)
             print("percent complete: ", str((1 - self.num_entries / orig_num_entries) * 100))
             print("Current % counter: " + str(self.percent_emptied))
-        if ((1 - self.num_entries / orig_num_entries) * 100 > self.percent_emptied):
-            # May need to increment more than once for extremely small datasets
-            while ((1 - self.num_entries / orig_num_entries) * 100 > self.percent_emptied + 9.99):
-                self.percent_emptied += 10
 
-            sys.stderr.write("Garbage collection {}% complete\t\t {}\n".format(\
+        # Status counter
+        if ((1 - self.num_entries / orig_num_entries) * 100 > self.percent_emptied):
+            sys.stderr.write("Memory clearing {}% complete\t\t {}\n".format(\
             str(self.percent_emptied), ctime()))
-            self.percent_emptied += 10 if self.percent_emptied < 90 else 1
+
+            if self.percent_emptied == 90:
+                sys.stderr.write("You may see a slowdown here, that is expected\n")
+            if self.percent_emptied == 99:
+                sys.stderr.write("You may see even more of a slowdown here, that is expected\n")
+
+            # Add smaller increments nearing 100%
+            if self.percent_emptied < 90:
+                self.percent_emptied += 10
+            elif self.percent_emptied < 99:
+                self.percent_emptied += 1
+            else:
+                self.percent_emptied = round(self.percent_emptied + 0.1, 1)
+
+
 
         # When terminal key found, decrement num_entries and return
         if not isinstance(obj, dict):
@@ -113,43 +125,13 @@ class NestedKmerDict():
             self._Clear(obj[item], orig_num_entries, level + 1, verbose, hella_verbose)
 
         # Clear + delete all inner objects
-        if level > 1:
-            obj.clear()
-            assert len(obj) == 0, "Length of object is not 0 after clearing"
-            del obj
-            gc.collect()
-        # Extra debug for top-level
-        else:
-            sys.stderr.write("FINAL BOSS: top-level reached\n")
-            num_top_items = len(obj)
-            top_progress = 10
-            sys.stderr.write("{} top-level items to remove\n".format(num_top_items))
-
-            # Pop all items
-            while len(obj):
-                obj.popitem()
-
-                # Item pop progress counter
-                if ( (1 - (len(obj) / num_top_items)) * 100 > top_progress):
-                    sys.stderr.write("Top-level item removal {} percent complete\t{}\n".format(\
-                    str(top_progress), ctime()))
-                    top_progress += 10
-                    gc.collect()
-
-            assert len(obj) == 0, "Length of top level is not 0 after clearing"
-            sys.stderr.write("Done popping items at {}\n".format(ctime()))
-            del obj
-
-        # Extra stats when num_entries nears zero
-        if self.num_entries < 5 and level <= 2:
-            sys.stderr.write(" ".join(["level", str(level), "top-level-length/size/num_entries:\t"]))
-            sys.stderr.write(" / ".join([ str(len(self.counts)), str(self.Size()), str(self.num_entries) + "\n" ] ) )
+        obj.clear()
+        del obj
+        gc.collect()
 
         # Verify empty before return
         if level == 1:
-            sys.stderr.write("Immabout to return, here are my contents and top-level length:\n")
-            print(self.PrintAll())
-            print(len(self.counts))
+            sys.stderr.write("Nkd clear says: Done clearing dictionary.\n")
 
 
     # Read 17-mers from Jellyfish dump file
@@ -165,7 +147,7 @@ class NestedKmerDict():
                 exit("File " + source.name + " not found")
 
         # Read all k-mers and counts into dictionary
-        sys.stderr.write("Reading kmer counts from file " + source.name + "...\n")
+        sys.stderr.write("\nReading kmer counts from file " + source.name + "...\n")
         sys.stderr.write("Logging to " + log.name + "\n")
         log.write("Kmer loading from " + source.name + " began at time " + ctime() + "\n")
         log.flush()
