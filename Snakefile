@@ -208,55 +208,10 @@ rule calc_scores:
     input:
         dump="data/kmer-counts/{p}{read}_17mer_dumps.fa",
         map="data/maps/{genome}_45mers_filtered.sam"
-    log:
-        "data/scores/{genome}_45mers_{p}{read}_scores.log"
     output:
         "data/scores/{genome}_45mers_{p}{read}_scores.sam"
-    run:
-        import sys
-        import gc
-        sys.path.insert(1, "CalcScores")
-        from NestedKmerDict import NestedKmerDict
-        from CalcKmerScores import CalcFromSam
-
-        dump=open(input["dump"], 'r')
-        oligos=open(input["map"], 'r')
-        output=open(output[0], 'w')
-        log=open(log[0], 'w')
-
-        nkd = NestedKmerDict()
-        nkd.Populate(dump, log)
-        dump.close()
-
-        CalcFromSam(nkd, oligos, output, log, fast=True, log_missing=False)
-
-        try:
-            oligos.close()
-            sys.stderr.write("Snakefile says: oligos closed\n")
-        except:
-            sys.stderr.write("Snakefile says: could not close oligo file\n")
-
-        try:
-            output.close()
-            sys.stderr.write("Snakefile says: scores output closed\n")
-        except:
-            sys.stderr.write("Snakefile says: could not close scores output file\n")
-
-        sys.stderr.write("Snakefile says: attempting to delete nkd\n")
-        try:
-            del nkd
-            sys.stderr.write("Snakefile says: nkd deleted\n")
-        except:
-            sys.stderr.write("Snakefile says: could not delete nkd\n")
-
-        sys.stderr.write("Snakefile says: attempting to garbage collect\n")
-        try:
-            gc.collect()
-            sys.stderr.write("Snakefile says: garbage collected\n")
-        except:
-            sys.stderr.write("Snakefile says: could not garbage collect\n")
-
-        sys.stderr.write("Snakefile says: This is the end my only friend the end\n")
+    shell:
+        "python CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
 
 rule score_histogram:
     input:
