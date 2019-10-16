@@ -7,17 +7,17 @@ Download genome, place in data/seqs/ directory, and rename to match genome wildc
 (Optional) If you are downloading reads from NCBI and wish to prefetch the reads sra file before running fastq-dump, place the sra file in the data/reads/ directory
 """
 
-# from os import path
+configfile: "config.yaml"
 
-READS=["SRR2960981"]
-PREFIX=["85seed_42sub_"]
-GENOMES=["Zea_mays.AGPv4"]
-
-# To avoid infinite recursion: wildcard "read" is alphanumeric,
-# wildcard "prefix" is alphanumeric plus an underscore
+# Constrain wildcards based on config file
+def constrain(arg):
+    if type(arg) == "list":
+        return "|".join(arg)
+    else:
+        return(arg)
 wildcard_constraints:
-    read="[A-Za-z0-9]+",
-    p="\d+seed_\d+sub_"
+    read=constrain(config["reads"]),
+    p=constrain(config["prefix"])
 
 # Limits for k-mer score filtering
 coverage = 34 #TODO write rule to calculate coverage instead of hardcoding

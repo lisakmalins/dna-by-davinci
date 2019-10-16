@@ -1,0 +1,7 @@
+reads: SRR2960981
+
+prefix: "85seed_42sub_"
+
+genome: "Zea_mays.AGPv4"
+
+binsize: 1000000
