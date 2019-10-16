@@ -218,22 +218,53 @@ rule score_select:
 
 ###-------------------- Generate coverage histogram data ---------------------###
 
-rule make_bins:
+# Make TSV file of all sequences and lengths in genome
+rule make_windows1:
     input:
         "data/maps/{genome}_45mers_unfiltered.sam"
-    params:
-        binsize=1000000
     output:
-        "data/coverage/{genome}_45mers_{params.binsize}_bins.bed"
+        temp("data/coverage/{genome}_allseqs.tsv")
     shell:
-        "bash analysis/setup_bins.sh {input} {output} {params.binsize}"
+        """
+        module load bedtools2/2.27.0
+
+        # Find end of headers
+        HEADEREND=`grep -m 1 -v "^@" -n {input} | cut -f1 -d:`
+
+        # make genome file
+        head -n $HEADEREND {input} | grep "^@SQ" | \
+        cut -f 2-3 | sed -e 's/SN://g' -e 's/LN://g' > {output}
+        """
+
+# Select sequences listed in config file and discard others
+rule make_windows2:
+    input:
+        "data/coverage/{genome}_allseqs.tsv"
+    output:
+        "data/coverage/{genome}_seqs.tsv"
+    run:
+        out = open(output[0], 'w')
+        for line in open(input[0], 'r').readlines():
+            sequences = list(map(lambda x: str(x), config["sequences"]))
+            if line.split()[0] in sequences:
+                out.write(line)
+
+# Make bins according to binsize in selected sequences
+rule make_windows3:
+    input:
+        "data/coverage/{genome}_seqs.tsv"
+    params:
+        binsize=config["binsize"]
+    output:
+        "data/coverage/{{genome}}_45mers_{binsize}_bins.bed".format(binsize=config["binsize"])
+    shell:
+        "bedtools makewindows -g {input} -w {params.binsize} > {output}"
+
 
 rule binned_counts:
     input:
         map="data/scores/{genome}_45mers_{p}{read}_scores_{lower}_{upper}.sam",
-        bins="data/coverage/{genome}_45mers_{params.binsize}_bins.bed"
-    params:
-        binsize=1000000
+        bins="data/coverage/{{genome}}_45mers_{binsize}_bins.bed".format(binsize=config["binsize"])
     output:
         "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed"
     shell:
