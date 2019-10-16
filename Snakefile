@@ -26,28 +26,14 @@ coverage = 34 #TODO write rule to calculate coverage instead of hardcoding
 lower = round((45 - 17 + 1) * coverage * 0.375)
 upper = round((45 - 17 + 1) * coverage * 1.8125)
 
-# Testing pipeline stepwise
 rule targets:
     params:
         lb=lower,
         ub=upper
     input:
-        expand("data/kmer-counts/{p}{read}_17mer_histo.txt", p=PREFIX, read=READS),
-        expand("data/kmer-counts/{p}{read}_17mer_dumps.fa", p=PREFIX, read=READS),
-        expand("data/maps/{genome}_45mers_unfiltered.sam", genome=GENOMES),
-        expand("data/scores/{genome}_45mers_{p}{read}_scores_histo.txt", zip, genome=GENOMES, p=PREFIX, read=READS),
-        expand("data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed", zip, genome=GENOMES, p=PREFIX, read=READS, lower=lower, upper=upper)
-
-rule targets_final:
-    params:
-        lb=lower,
-        ub=upper
-    input:
-        expand("data/kmer-counts/{p}{read}_17mer_histo.txt", p=PREFIX, read=READS),
-        #expand("data/kmer-counts/{p}{read}_17mer_dumps.fa", p=PREFIX, read=READS),
-        #expand("data/maps/{genome}_45mers_unfiltered.sam", g = GENOMES),
-        expand("data/scores/{genome}_45mers_{p}{read}_scores_histo.txt", zip, genome=GENOMES, p=PREFIX, read=READS),
-        expand("data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed", zip, genome=GENOMES, p=PREFIX, read=READS, lower=lower, upper=upper)
+        "data/kmer-counts/{p}{read}_17mer_histo.txt".format(p=config["prefix"], read=config["reads"]),
+        "data/scores/{genome}_45mers_{p}{read}_scores_histo.txt".format(genome=config["genome"], p=config["prefix"], read=config["reads"]),
+        "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed".format(genome=config["genome"], p=config["prefix"], read=config["reads"], lower=lower, upper=upper)
 
 ###--------------------- Download reads ---------------------###
 
