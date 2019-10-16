@@ -1,5 +1,9 @@
 # Usage: rscript binned_coverage.R {input.txt} {output.jpg}
-library(tidyverse)
+
+library(dplyr)
+library(ggplot2)
+library(readr)
+
 args <- commandArgs(trailingOnly = TRUE)
 source = args[1]
 output = args[2]
