@@ -269,3 +269,11 @@ rule binned_counts:
         "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed"
     shell:
         "bash analysis/binned_read_counts.sh {input.map} {input.bins} {output}"
+
+rule binned_count_plot:
+    input:
+        "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed"
+    output:
+        "data/plots/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.{ext}"
+    shell:
+        "rscript RScripts/binned_coverage.R {input} {output}"
