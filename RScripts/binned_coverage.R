@@ -1,4 +1,4 @@
-# Usage: rscript binned_coverage.R {input.bed} {output.ext}
+# Usage: Rscript binned_coverage.R {input.bed} {output.ext}
 
 library(dplyr)
 library(ggplot2)

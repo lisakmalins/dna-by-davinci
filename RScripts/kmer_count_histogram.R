@@ -1,4 +1,4 @@
-# Usage: rscript binned_coverage.R {input.txt} {output.ext}
+# Usage: Rscript kmer_count_histogram.R {input.txt} {output.ext}
 
 library(dplyr)
 library(ggplot2)

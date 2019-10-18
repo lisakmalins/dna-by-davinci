@@ -283,7 +283,7 @@ rule binned_count_plot:
     output:
         "data/plots/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.{ext}"
     shell:
-        "rscript RScripts/binned_coverage.R {input} {output}"
+        "Rscript RScripts/binned_coverage.R {input} {output}"
 
 rule kmer_count_plot:
     input:
@@ -291,7 +291,7 @@ rule kmer_count_plot:
     output:
         "data/plots/{p}{read}_17mer_histo.{ext}"
     shell:
-        "rscript RScripts/kmer_count_histogram.R {input} {output}"
+        "Rscript RScripts/kmer_count_histogram.R {input} {output}"
 
 rule kmer_score_plot:
     input:
@@ -299,4 +299,4 @@ rule kmer_score_plot:
     output:
         "data/plots/{genome}_45mers_{p}{read}_scores_histo.{ext}"
     shell:
-        "rscript RScripts/kmer_score_histogram.R {input} {output}"
+        "Rscript RScripts/kmer_score_histogram.R {input} {output}"
