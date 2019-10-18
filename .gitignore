@@ -1,3 +1,5 @@
 *.pyc
 sandbox/
 .snakemake
+*.out
+*.err
