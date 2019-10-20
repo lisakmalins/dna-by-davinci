@@ -78,8 +78,15 @@ rule quick_fastq_dump:
 
 
 ###--------------------- Subsample if necessary ---------------------###
+# Uninterleave reads into forward and reverse
 rule uninterleave:
-
+    input:
+        "data/reads/{read}-1.fastq"
+    output:
+        temp("data/reads/{read}-1.fastq"),
+        temp("data/reads/{read}-2.fastq")
+    shell:
+        "bash SampleReads/fastUninterleave.sh {input}"
 
 rule subsample:
     input:
