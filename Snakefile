@@ -31,14 +31,22 @@ rule targets:
         lb=lower,
         ub=upper
     input:
-        "data/kmer-counts/{p}{read}_17mer_histo.txt".format(p=config["prefix"], read=config["reads"]),
-        "data/scores/{genome}_45mers_{p}{read}_scores_histo.txt".format(genome=config["genome"], p=config["prefix"], read=config["reads"]),
-        "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed".format(genome=config["genome"], p=config["prefix"], read=config["reads"], lower=lower, upper=upper),
+        # Jellyfish arm
+        "flags/jellyfish.done",
+
+        # Oligos arm
+        "flags/oligos.done",
+
+        # Coverage plots
         expand("data/plots/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.{{ext}}".format( \
         genome=config["genome"], p=config["prefix"], read=config["reads"], lower=lower, upper=upper),
         ext = ["png", "pdf"]),
+
+        # K-mer count histogram plot
         expand("data/plots/{p}{read}_17mer_histo.{{ext}}".format( \
         p=config["prefix"], read=config["reads"]), ext = ["png", "pdf"]),
+
+        # K-mer score histogram plot
         expand("data/plots/{genome}_45mers_{p}{read}_scores_histo.{{ext}}".format( \
         genome=config["genome"], p=config["prefix"], read=config["reads"]), ext = ["png", "pdf"])
 
