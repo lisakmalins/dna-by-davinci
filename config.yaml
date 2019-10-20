@@ -2,6 +2,9 @@ reads: SRR2960981
 
 prefix: "85seed_42sub_"
 
+# Estimation of read error rate (recommended 0.01 for Illumina)
+error_rate: 0.01
+
 # Pipeline will approximate coverage of reads, which may be too high to manage in memory.
 # If so, a Snakemake rule will downsample the reads to this coverage (recommended 42).
 max_coverage: 42
@@ -10,6 +13,9 @@ max_coverage: 42
 genome: "Zea_mays.AGPv4"
 # Approximate genome size
 genome_size: 2500000000
+
+# K-mer size (recommended 17)
+mer_size: 17
 
 binsize: 1000000
 

@@ -179,6 +179,41 @@ rule interleave:
 
 ###--------------------- Count 17-mer frequencies with Jellyfish ---------------------###
 
+# Calculate expected k-mers from formula
+def expected_kmers(wildcards=False):
+    sys.stderr.write("Calculating hash size for jellyfish\n")
+
+    G = config["genome_size"]
+    c = config["max_coverage"]
+    e = config["error_rate"]
+    k = config["mer_size"]
+
+    # Replace c with actual coverage if less than max
+    try:
+        readsfile = "data/reads/{read}_approx_coverage.txt".format(read=config["reads"])
+        with open(readsfile, 'r') as f:
+            approx_coverage = int(f.read().strip())
+            if approx_coverage < int(config["max_coverage"]):
+                c = approx_coverage
+    except FileNotFoundError:
+        sys.stderr.write("expected_kmers function says: could not open {}\n".format(readsfile))
+        sys.stderr.write("Using value from config file instead: {}\n".format(c))
+
+    exp_kmers = round(G + G * c * e * k)
+
+    # Convert to gigabase or megabase for readability
+    if exp_kmers > 1000000000:
+        exp_kmers = str(round(exp_kmers / 1000000000)) + "G"
+    elif exp_kmers > 1000000:
+        exp_kmers = str(round(exp_kmers / 1000000)) + "M"
+
+    return str(exp_kmers)
+
+# Print calculated hash size by running `snakemake print_hash`
+rule print_hash:
+    run:
+        print(expected_kmers())
+
 rule count_pass1:
     input:
         "data/reads/{p}{read}.fastq"
