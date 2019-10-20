@@ -104,10 +104,11 @@ rule subsample:
         seqtk sample -s{params.seed} {input} {params.coverage} > {output}
         """
 
+# Interleave subsampled reads back into one file.
 rule interleave:
     input:
-        "data/reads/{p}{read}_pass_1.fastq",
-        "data/reads/{p}{read}_pass_2.fastq"
+        "data/reads/{p}{read}-1.fastq",
+        "data/reads/{p}{read}-2.fastq"
     output:
         "data/reads/{p}{read}.fastq"
     shell:
