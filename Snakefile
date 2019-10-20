@@ -214,6 +214,32 @@ rule jellyfish_histo:
     shell:
         "jellyfish histo {input} > {output}"
 
+# If coverage is too high and subsampling is necessary,
+# these functions will use a prefix to request jellyfish on subsampled reads.
+# If coverage is manageable, they will request jellyfish on the original reads.
+def get_jelly_histo(wildcards):
+    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
+        if int(f.read().strip()) > int(config["max_coverage"]):
+            prefix = "85seed_{}sub".format(config["max_coverage"])
+        else:
+            prefix = ""
+    return "data/kmer-counts/{p}{read}_17mer_histo.txt".format(p=prefix, read=config["reads"])
+
+def get_jelly_dump(wildcards):
+    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
+        if int(f.read().strip()) > int(config["max_coverage"]):
+            prefix = "85seed_{}sub".format(config["max_coverage"])
+        else:
+            prefix = ""
+    return "data/kmer-counts/{p}{read}_17mer_dumps.fa".format(p=prefix, read=config["reads"])
+
+rule jellyfish_done:
+    input:
+        get_jelly_histo,
+        get_jelly_dump
+    output:
+        touch("flags/jellyfish.done")
+
 ###----------------------------- Download genome -----------------------------###
 # rule download_genome:
 #     output:
