@@ -58,20 +58,23 @@ ruleorder: quick_fastq_dump > fastq_dump
 # Slow version sans prefetch
 rule fastq_dump:
     output:
-        "data/reads/{read}_pass_1.fastq",
-        "data/reads/{read}_pass_2.fastq"
+        "data/reads/{read}.fastq"
     shell:
-        "fastq-dump --outdir data/reads --skip-technical --readids --read-filter pass --dumpbase --split-3 --clip {wildcards.read}"
+        "fastq-dump --outdir data/reads \
+        --skip-technical --readids --read-filter pass --dumpbase \
+        --split-spot --clip {wildcards.read}"
 
 # Fast version if sra file is prefetched
 rule quick_fastq_dump:
     input:
         "data/reads/{read}.sra"
     output:
-        "data/reads/{read}_pass_1.fastq",
-        "data/reads/{read}_pass_2.fastq"
+        "data/reads/{read}.fastq"
     shell:
-        "fastq-dump --outdir data/reads --skip-technical --readids --read-filter pass --dumpbase --split-3 --clip data/reads/{wildcards.read}.sra"
+        "fastq-dump --outdir data/reads \
+        --skip-technical --readids --read-filter pass --dumpbase \
+        --split-spot --clip data/reads/{wildcards.read}.sra"
+
 
 
 ###--------------------- Subsample if necessary ---------------------###
