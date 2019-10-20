@@ -302,6 +302,12 @@ rule filter_oligos:
     script:
         "FilterOligos/FilterOligos.py"
 
+rule oligos_done:
+    input:
+        "data/maps/{genome}_45mers_filtered.sam".format(genome=config["genome"])
+    output:
+        touch("flags/oligos.done")
+
 
 ###------------------- Calculate k-mer scores for 45-mers --------------------###
 
