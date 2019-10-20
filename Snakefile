@@ -88,20 +88,20 @@ rule uninterleave:
     shell:
         "bash SampleReads/fastUninterleave.sh {input}"
 
+# Subsample reads to a lower coverage
 rule subsample:
     input:
-        "data/reads/{read}_pass_1.fastq",
-        "data/reads/{read}_pass_2.fastq"
+        "data/reads/{read}-{n}.fastq"
+    wildcard_constraints:
+        n="1|2"
     params:
         seed=85,
-        coverage=0.42
+        coverage=float(config["max_coverage"]) / 100
     output:
-        "data/reads/{p}{read}_pass_1.fastq",
-        "data/reads/{p}{read}_pass_2.fastq"
+        temp("data/reads/{p}{read}-{n}.fastq")
     shell:
         """
-        seqtk sample -s{params.seed} {input[0]} {params.coverage} > {output[0]}
-        seqtk sample -s{params.seed} {input[1]} {params.coverage} > {output[1]}
+        seqtk sample -s{params.seed} {input} {params.coverage} > {output}
         """
 
 rule interleave:

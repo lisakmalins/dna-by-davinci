@@ -2,6 +2,10 @@ reads: SRR2960981
 
 prefix: "85seed_42sub_"
 
+# Pipeline will approximate coverage of reads, which may be too high to manage in memory.
+# If so, a Snakemake rule will downsample the reads to this coverage (recommended 42).
+max_coverage: 42
+
 genome: "Zea_mays.AGPv4"
 
 binsize: 1000000
