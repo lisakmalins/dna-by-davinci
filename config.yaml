@@ -6,7 +6,10 @@ prefix: "85seed_42sub_"
 # If so, a Snakemake rule will downsample the reads to this coverage (recommended 42).
 max_coverage: 42
 
+# Base name of genome
 genome: "Zea_mays.AGPv4"
+# Approximate genome size
+genome_size: 2500000000
 
 binsize: 1000000
 

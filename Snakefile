@@ -75,6 +75,69 @@ rule quick_fastq_dump:
         --skip-technical --readids --read-filter pass --dumpbase \
         --split-spot --clip data/reads/{wildcards.read}.sra"
 
+###------------------- Estimate coverage --------------------###
+
+ruleorder: estimate_bases > estimate_bases_gz
+
+# Estimate number of bases in fastq reads.
+rule estimate_bases:
+    input:
+        "data/reads/{read}.fastq"
+    output:
+        "data/reads/{read}_readlength.txt",
+        "data/reads/{read}_numlines.txt"
+    run:
+        # shell() automatically sets "bash strict mode" and will complain about pipefail.
+        # set +o pipefail disables this.
+        shell("echo \"Estimating read length\" ")
+        # Get typical fastq line length by longest line in first 100
+        shell("set +o pipefail head -n 100 {input} | wc -L > {output[0]}")
+        # Get number of lines in fastq
+        shell("set +o pipefail wc -l {input} > {output[1]}")
+
+# Estimate number of bases in gzipped fastq reads.
+# Use pigz to speed up unzipping.
+rule estimate_bases_gz:
+    input:
+        "data/reads/{read}.fastq.gz"
+    output:
+        "data/reads/{read}_readlength.txt",
+        "data/reads/{read}_numlines.txt"
+    threads:
+        8
+    run:
+        # shell() automatically sets "bash strict mode" and will complain about pipefail.
+        # set +o pipefail disables this.
+        shell("echo \"Estimating read length\" ")
+        # Get typical fastq line length by longest line in first 100
+        shell("set +o pipefail && unpigz -p {threads} -c {input} | head -n 100 | wc -L > {output[0]}")
+        # Get number of lines in fastq
+        shell("set +o pipefail && unpigz -p {threads} -c {input} | wc -l > {output[1]}")
+
+
+checkpoint estimate_coverage:
+    input:
+        "data/reads/{read}_readlength.txt",
+        "data/reads/{read}_numlines.txt"
+    output:
+        "data/reads/{read}_numbases.txt",
+        "data/reads/{read}_approx_coverage.txt"
+    run:
+        # Load read length and number of lines in fastq from last step
+        with open(input[0], 'r') as infile:
+            readlength = int(infile.read().strip())
+        with open(input[1], 'r') as infile:
+            numlines = int(infile.read().strip())
+
+        # Approximate number of bases by typical length * number of reads
+        numbases = readlength * numlines / 4
+        with open(output[0], 'w') as out:
+            out.write(str(round(numbases)) + "\n")
+
+        # Approximate coverage by number of bases / genome size
+        approx_coverage = numbases / config["genome_size"]
+        with open(output[1], 'w') as out:
+            out.write(str(round(approx_coverage)) + "\n")
 
 
 ###--------------------- Subsample if necessary ---------------------###
