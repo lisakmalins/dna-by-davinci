@@ -43,8 +43,8 @@ rule targets:
         ext = ["png", "pdf"]),
 
         # K-mer count histogram plot
-        expand("data/plots/{p}{read}_17mer_histo.{{ext}}".format( \
-        p=config["prefix"], read=config["reads"]), ext = ["png", "pdf"]),
+        expand("data/plots/{p}{read}_{k}mer_histo.{{ext}}".format( \
+        p=config["prefix"], read=config["reads"], k=config["mer_size"]), ext = ["png", "pdf"]),
 
         # K-mer score histogram plot
         expand("data/plots/{genome}_45mers_{p}{read}_scores_histo.{{ext}}".format( \
