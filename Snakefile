@@ -217,35 +217,41 @@ rule print_hash:
 rule count_pass1:
     input:
         "data/reads/{p}{read}.fastq"
+    params:
+        k=config["mer_size"],
+        bcsize=expected_kmers()
     output:
-        "data/kmer-counts/{p}{read}.bc"
+        temp("data/kmer-counts/{p}{read}.bc")
     threads: 16
     shell:
-        "jellyfish bc -m 17 -C -s 20G -t 16 -o {output} {input}"
+        "jellyfish bc -m {params.k} -C -s {params.bcsize} -t {threads} -o {output} {input}"
 
 rule count_pass2:
     input:
         fastq="data/reads/{p}{read}.fastq",
         bc="data/kmer-counts/{p}{read}.bc"
+    params:
+        k=config["mer_size"],
+        genomesize=str(config["genome_size"])
     output:
-        "data/kmer-counts/{p}{read}_17mer_counts.jf"
+        "data/kmer-counts/{p}{read}_{k}mer_counts.jf"
     threads: 16
     shell:
-        "jellyfish count -m 17 -C -s 3G -t 16 --bc {input.bc} -o {output} {input.fastq}"
+        "jellyfish count -m {params.k} -C -s {params.genomesize} -t {threads} --bc {input.bc} -o {output} {input.fastq}"
 
 rule jellyfish_dump:
     input:
-        "data/kmer-counts/{p}{read}_17mer_counts.jf"
+        "data/kmer-counts/{p}{read}_{k}mer_counts.jf"
     output:
-        "data/kmer-counts/{p}{read}_17mer_dumps.fa"
+        "data/kmer-counts/{p}{read}_{k}mer_dumps.fa"
     shell:
         "jellyfish dump {input} > {output}"
 
 rule jellyfish_histo:
     input:
-        "data/kmer-counts/{p}{read}_17mer_counts.jf"
+        "data/kmer-counts/{p}{read}_{k}mer_counts.jf"
     output:
-        "data/kmer-counts/{p}{read}_17mer_histo.txt"
+        "data/kmer-counts/{p}{read}_{k}mer_histo.txt"
     shell:
         "jellyfish histo {input} > {output}"
 
@@ -258,7 +264,7 @@ def get_jelly_histo(wildcards):
             prefix = "85seed_{}sub".format(config["max_coverage"])
         else:
             prefix = ""
-    return "data/kmer-counts/{p}{read}_17mer_histo.txt".format(p=prefix, read=config["reads"])
+    return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(p=prefix, read=config["reads"], k=config["mer_size"])
 
 def get_jelly_dump(wildcards):
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
@@ -266,7 +272,7 @@ def get_jelly_dump(wildcards):
             prefix = "85seed_{}sub".format(config["max_coverage"])
         else:
             prefix = ""
-    return "data/kmer-counts/{p}{read}_17mer_dumps.fa".format(p=prefix, read=config["reads"])
+    return "data/kmer-counts/{p}{read}_{k}mer_dumps.fa".format(p=prefix, read=config["reads"], k=config["mer_size"])
 
 rule jellyfish_done:
     input:
@@ -438,9 +444,9 @@ rule binned_count_plot:
 
 rule kmer_count_plot:
     input:
-        "data/kmer-counts/{p}{read}_17mer_histo.txt"
+        "data/kmer-counts/{p}{read}_{k}mer_histo.txt"
     output:
-        "data/plots/{p}{read}_17mer_histo.{ext}"
+        "data/plots/{p}{read}_{k}mer_histo.{ext}"
     shell:
         "Rscript RScripts/kmer_count_histogram.R {input} {output}"
 
