@@ -1,7 +1,5 @@
 reads: SRR2960981
 
-prefix: "85seed_42sub_"
-
 # Estimation of read error rate (recommended 0.01 for Illumina)
 error_rate: 0.01
 

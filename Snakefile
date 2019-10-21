@@ -16,8 +16,7 @@ def constrain(arg):
     else:
         return(arg)
 wildcard_constraints:
-    read=constrain(config["reads"]),
-    p=constrain(config["prefix"])
+    read=constrain(config["reads"])
 
 rule targets:
     input:
@@ -27,17 +26,9 @@ rule targets:
         # Oligos arm
         "flags/oligos.done",
 
-        # Coverage plots
-        expand("data/plots/{genome}_45mers_probes_coverage.{{ext}}".format( \
-        genome=config["genome"]), ext = ["png", "pdf"]),
+        # Plots
+        "flags/plots.done"
 
-        # K-mer count histogram plot
-        expand("data/plots/{p}{read}_{k}mer_histo.{{ext}}".format( \
-        p=config["prefix"], read=config["reads"], k=config["mer_size"]), ext = ["png", "pdf"]),
-
-        # K-mer score histogram plot
-        expand("data/plots/{genome}_45mers_scores_histo.{{ext}}".format( \
-        genome=config["genome"], p=config["prefix"], read=config["reads"]), ext = ["png", "pdf"])
 
 ###--------------------- Download reads ---------------------###
 
@@ -263,6 +254,15 @@ def get_jelly_dump(wildcards):
             prefix = ""
     return "data/kmer-counts/{p}{read}_{k}mer_dumps.fa".format(p=prefix, read=config["reads"], k=config["mer_size"])
 
+def get_jelly_histo_plots(wildcards):
+    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
+        if int(f.read().strip()) > int(config["max_coverage"]):
+            prefix = "85seed_{}sub".format(config["max_coverage"])
+        else:
+            prefix = ""
+    return expand("data/plots/{p}{read}_{k}mer_histo.{ext}", \
+    p=prefix, read=config["reads"], k=config["mer_size"], ext=["png", "pdf"])
+
 rule jellyfish_done:
     input:
         get_jelly_histo,
@@ -450,6 +450,8 @@ rule kmer_count_plot:
         "data/kmer-counts/{p}{read}_{k}mer_histo.txt"
     output:
         "data/plots/{p}{read}_{k}mer_histo.{ext}"
+    wildcard_constraints:
+        read=config["reads"]
     shell:
         "Rscript RScripts/kmer_count_histogram.R {input} {output}"
 
@@ -460,3 +462,19 @@ rule kmer_score_plot:
         "data/plots/{genome}_45mers_scores_histo.{ext}"
     shell:
         "Rscript RScripts/kmer_score_histogram.R {input} {output}"
+
+rule plots_done:
+    input:
+        # Binned coverage plot
+        expand("data/plots/{genome}_45mers_probes_coverage.{ext}", \
+        genome=config["genome"], ext = ["png", "pdf"]),
+
+        # K-mer count histogram plot
+        get_jelly_histo_plots,
+
+        # K-mer score histogram plot
+        expand("data/plots/{genome}_45mers_scores_histo.{ext}", \
+        genome=config["genome"], ext = ["png", "pdf"])
+        
+    output:
+        touch("flags/plots.done")
