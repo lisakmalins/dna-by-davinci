@@ -323,7 +323,7 @@ rule calculate_peak:
 ###----------------------------- Download genome -----------------------------###
 # rule download_genome:
 #     output:
-#         "data/genome/{genome}.fa"
+#         "data/genome/{{genome}}.{}"
 #     shell:
 #         """
 #         wget ftp://ftp.ensemblgenomes.org/pub/plants/release-36/fasta/zea_mays/dna/Zea_mays.AGPv4.dna.toplevel.fa.gz
@@ -331,35 +331,45 @@ rule calculate_peak:
 #         """
 
 ###--------- Slice genome into overlapping 45-mers, map, and filter ----------###
+
+# Handle genome to be either .fa or .fasta
+GENOME, FASTA_EXT = config["genome"].rsplit(".", 1)
+assert FASTA_EXT.lower() in ["fasta", "fa"], \
+"Sorry, I don't recognize genome file extension {}.\n \
+Make sure you put your genome assembly in data/genome/ \n \
+and list the filename in config.yaml.\n \
+Here's the genome filename currently listed in config.yaml:\n {}\n \
+".format(FASTA_EXT, config["genome"])
+
 rule get_oligos:
     input:
-        "data/genome/{genome}.fa"
+        "data/genome/{{genome}}.{}".format(FASTA_EXT)
     output:
-        "data/oligos/{genome}_45mers.fa"
+        "data/oligos/{genome}_45mers.fasta"
     shell:
         "python GetOligos/GetOligos.py {input} 45 3 {output}"
 
 rule bwa_index:
     input:
-        "data/genome/{genome}.fa",
+        "data/genome/{{genome}}.{}".format(FASTA_EXT),
     output:
-        "data/genome/{genome}.fa.amb",
-        "data/genome/{genome}.fa.ann",
-        "data/genome/{genome}.fa.bwt",
-        "data/genome/{genome}.fa.pac",
-        "data/genome/{genome}.fa.sa"
+        "data/genome/{{genome}}.{}.amb".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.ann".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.bwt".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.pac".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.sa".format(FASTA_EXT)
     shell:
         "bwa index {input}"
 
 rule map_oligos:
     input:
-        "data/genome/{genome}.fa.amb",
-        "data/genome/{genome}.fa.ann",
-        "data/genome/{genome}.fa.bwt",
-        "data/genome/{genome}.fa.pac",
-        "data/genome/{genome}.fa.sa",
-        genome="data/genome/{genome}.fa",
-        oligos="data/oligos/{genome}_45mers.fa"
+        "data/genome/{{genome}}.{}.amb".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.ann".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.bwt".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.pac".format(FASTA_EXT),
+        "data/genome/{{genome}}.{}.sa".format(FASTA_EXT),
+        genome="data/genome/{{genome}}.{}".format(FASTA_EXT),
+        oligos="data/oligos/{genome}_45mers.fasta"
     output:
         "data/maps/{genome}_45mers_unfiltered.sam"
     threads:
@@ -384,7 +394,7 @@ rule filter_oligos:
 
 rule oligos_done:
     input:
-        "data/maps/{genome}_45mers_filtered.sam".format(genome=config["genome"])
+        "data/maps/{genome}_45mers_filtered.sam".format(genome=GENOME)
     output:
         touch("flags/oligos.done")
 
@@ -509,14 +519,14 @@ rule plots_done:
     input:
         # Binned coverage plot
         expand("data/plots/{genome}_45mers_probes_coverage.{ext}", \
-        genome=config["genome"], ext = ["png", "pdf"]),
+        genome=GENOME, ext = ["png", "pdf"]),
 
         # K-mer count histogram plot
         get_jelly_histo_plots,
 
         # K-mer score histogram plot
         expand("data/plots/{genome}_45mers_scores_histo.{ext}", \
-        genome=config["genome"], ext = ["png", "pdf"])
+        genome=GENOME, ext = ["png", "pdf"])
 
     output:
         touch("flags/plots.done")
