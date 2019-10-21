@@ -341,13 +341,24 @@ and list the filename in config.yaml.\n \
 Here's the genome filename currently listed in config.yaml:\n {}\n \
 ".format(FASTA_EXT, config["genome"])
 
+rule relevant_seqs:
+    output:
+        temp("data/genome/{genome}_seqs.txt")
+    run:
+        with open(output[0], 'w') as f:
+            f.write("\n".join(config["sequences"]))
+
+
 rule get_oligos:
     input:
-        "data/genome/{{genome}}.{}".format(FASTA_EXT)
+        "data/genome/{{genome}}.{}".format(FASTA_EXT),
+        "data/genome/{genome}_seqs.txt"
     output:
         "data/oligos/{genome}_45mers.fasta"
+    log:
+        "data/oligos/{genome}_45mers.log"
     shell:
-        "python GetOligos/GetOligos.py {input} 45 3 {output}"
+        "python GetOligos/GetOligos.py {input} 45 3 {output} {log}"
 
 rule bwa_index:
     input:
