@@ -32,9 +32,9 @@ ruleorder: quick_fastq_dump > fastq_dump
 # Slow version sans prefetch
 rule fastq_dump:
     output:
-        "data/reads/{read}.fastq"
+        "data/reads/{read}.fastq.gz"
     shell:
-        "fastq-dump --outdir data/reads \
+        "fastq-dump --outdir data/reads --gzip \
         --skip-technical --readids --read-filter pass --dumpbase \
         --split-spot --clip {wildcards.read}"
 
@@ -43,11 +43,11 @@ rule quick_fastq_dump:
     input:
         "data/reads/{read}.sra"
     output:
-        "data/reads/{read}.fastq"
+        "data/reads/{read}.fastq.gz"
     shell:
-        "fastq-dump --outdir data/reads \
+        "fastq-dump --outdir data/reads --gzip \
         --skip-technical --readids --read-filter pass --dumpbase \
-        --split-spot --clip data/reads/{wildcards.read}.sra"
+        --split-spot --clip {input}"
 
 ###------------------- Estimate coverage --------------------###
 
