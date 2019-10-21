@@ -28,16 +28,15 @@ rule targets:
         "flags/oligos.done",
 
         # Coverage plots
-        expand("data/plots/{genome}_45mers_{p}{read}_scores_coverage.{{ext}}".format( \
-        genome=config["genome"], p=config["prefix"], read=config["reads"]), \
-        ext = ["png", "pdf"]),
+        expand("data/plots/{genome}_45mers_probes_coverage.{{ext}}".format( \
+        genome=config["genome"]), ext = ["png", "pdf"]),
 
         # K-mer count histogram plot
         expand("data/plots/{p}{read}_{k}mer_histo.{{ext}}".format( \
         p=config["prefix"], read=config["reads"], k=config["mer_size"]), ext = ["png", "pdf"]),
 
         # K-mer score histogram plot
-        expand("data/plots/{genome}_45mers_{p}{read}_scores_histo.{{ext}}".format( \
+        expand("data/plots/{genome}_45mers_scores_histo.{{ext}}".format( \
         genome=config["genome"], p=config["prefix"], read=config["reads"]), ext = ["png", "pdf"])
 
 ###--------------------- Download reads ---------------------###
@@ -355,28 +354,28 @@ rule calc_scores:
         dump=get_jelly_dump,
         map="data/maps/{genome}_45mers_filtered.sam"
     log:
-        "data/scores/{genome}_45mers_{p}{read}_scores.log"
+        "data/scores/{genome}_45mers_scores.log"
     output:
-        "data/scores/{genome}_45mers_{p}{read}_scores.sam"
+        "data/scores/{genome}_45mers_scores.sam"
     shell:
         "python CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
 
 rule score_histogram:
     input:
-        "data/scores/{genome}_45mers_{p}{read}_scores.sam"
+        "data/scores/{genome}_45mers_scores.sam"
     output:
-        "data/scores/{genome}_45mers_{p}{read}_scores_histo.txt"
+        "data/scores/{genome}_45mers_scores_histo.txt"
     shell:
         "python ScoresHisto/ScoresHistogram.py {input} {output}"
 
 rule score_select:
     input:
-        "data/scores/{genome}_45mers_{p}{read}_scores.sam",
+        "data/scores/{genome}_45mers_scores.sam",
         "data/kmer-counts/limits.txt"
     output:
-        "data/scores/{genome}_45mers_{p}{read}_scores_selected.sam"
+        "data/probes/{genome}_45mers_probes_selected.sam"
     log:
-        "data/scores/{genome}_45mers_{p}{read}_scores_selected.log"
+        "data/probes/{genome}_45mers_probes_selected.log"
     script:
         "SelectScores/SelectScores.py"
 
@@ -428,21 +427,21 @@ rule make_windows3:
 
 rule binned_counts:
     input:
-        map="data/scores/{genome}_45mers_{p}{read}_scores_selected.sam",
+        probes="data/probes/{genome}_45mers_probes_selected.sam",
         bins="data/coverage/{{genome}}_45mers_{binsize}_bins.bed".format(binsize=config["binsize"])
     output:
-        "data/coverage/{genome}_45mers_{p}{read}_scores_coverage.bed"
+        "data/coverage/{genome}_45mers_probes_coverage.bed"
     shell:
-        "bash analysis/binned_read_counts.sh {input.map} {input.bins} {output}"
+        "bash analysis/binned_read_counts.sh {input.probes} {input.bins} {output}"
 
 
 ###-------------------------------- R plots ---------------------------------###
 
 rule binned_count_plot:
     input:
-        "data/coverage/{genome}_45mers_{p}{read}_scores_coverage.bed"
+        "data/coverage/{genome}_45mers_probes_coverage.bed"
     output:
-        "data/plots/{genome}_45mers_{p}{read}_scores_coverage.{ext}"
+        "data/plots/{genome}_45mers_probes_coverage.{ext}"
     shell:
         "Rscript RScripts/binned_coverage.R {input} {output}"
 
@@ -456,8 +455,8 @@ rule kmer_count_plot:
 
 rule kmer_score_plot:
     input:
-        "data/scores/{genome}_45mers_{p}{read}_scores_histo.txt"
+        "data/scores/{genome}_45mers_scores_histo.txt"
     output:
-        "data/plots/{genome}_45mers_{p}{read}_scores_histo.{ext}"
+        "data/plots/{genome}_45mers_scores_histo.{ext}"
     shell:
         "Rscript RScripts/kmer_score_histogram.R {input} {output}"
