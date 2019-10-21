@@ -115,41 +115,78 @@ checkpoint estimate_coverage:
 
 
 ###--------------------- Subsample if necessary ---------------------###
-# Uninterleave reads into forward and reverse
+# Use unzipped reads if available
+ruleorder: uninterleave > uninterleave_gz
+
+# Uninterleave reads into forward and reverse, then gzip
 rule uninterleave:
     input:
-        "data/reads/{read}-1.fastq"
+        "data/reads/{read}.fastq"
     output:
-        temp("data/reads/{read}-1.fastq"),
-        temp("data/reads/{read}-2.fastq")
+        temp("data/reads/{read}-1.fastq.gz"),
+        temp("data/reads/{read}-2.fastq.gz")
+    threads:
+        12
     shell:
-        "bash SampleReads/fastUninterleave.sh {input}"
+        """
+        cat {input} \
+            | paste - - - - - - - - \
+            | tee >(cut -f 1-4 | tr '\t' '\n' | pigz -p {threads} > {output[0]}) \
+            | cut -f 5-8 | tr '\t' '\n' | pigz -p {threads} > {output[1]}
+        """
 
-# Subsample reads to a lower coverage
+# Uninterleave gzipped reads into forward and reverse, then gzip
+rule uninterleave_gz:
+    input:
+        "data/reads/{read}.fastq.gz"
+    output:
+        temp("data/reads/{read}-1.fastq.gz"),
+        temp("data/reads/{read}-2.fastq.gz")
+    threads:
+        12
+    shell:
+        """
+        unpigz -p {threads} -c {input} \
+            | paste - - - - - - - - \
+            | tee >(cut -f 1-4 | tr '\t' '\n' | pigz -p {threads} > {output[0]}) \
+            | cut -f 5-8 | tr '\t' '\n' | pigz -p {threads} > {output[1]}
+        """
+
+# Subsample gzipped reads to a lower coverage, then gzip
 rule subsample:
     input:
-        "data/reads/{read}-{n}.fastq"
+        "data/reads/{read}-{n}.fastq.gz"
     wildcard_constraints:
         n="1|2"
     params:
         seed=85,
         coverage=float(config["max_coverage"]) / 100
     output:
-        temp("data/reads/{p}{read}-{n}.fastq")
+        temp("data/reads/{p}{read}-{n}.fastq.gz")
+    threads:
+        12
     shell:
         """
-        seqtk sample -s{params.seed} {input} {params.coverage} > {output}
+        unpigz -p {threads} -c {input} | \
+        seqtk sample -s{params.seed} /dev/fd/0 {params.coverage} | \
+        pigz -p {threads} > {output}
         """
 
-# Interleave subsampled reads back into one file.
+# Interleave subsampled gzipped reads back into one gzipped file.
 rule interleave:
     input:
-        "data/reads/{p}{read}-1.fastq",
-        "data/reads/{p}{read}-2.fastq"
+        "data/reads/{p}{read}-1.fastq.gz",
+        "data/reads/{p}{read}-2.fastq.gz"
     output:
-        "data/reads/{p}{read}.fastq"
+        "data/reads/{p}{read}.fastq.gz"
+    threads:
+        12
     shell:
-        "bash SampleReads/fastInterleaveFromUnzip.sh {input} {output}"
+        """
+        paste <(unpigz -p {threads} -c {input[0]} | paste - - - -) \
+        <(unpigz -p {threads} -c {input[1]} | paste - - - -) \
+        | tr '\t' '\n' | pigz -p {threads} > {output}
+        """
 
 ###--------------------- Count 17-mer frequencies with Jellyfish ---------------------###
 
@@ -187,6 +224,17 @@ def expected_kmers(wildcards=False):
 rule print_hash:
     run:
         print(expected_kmers())
+
+# Temporarily unzip reads for Jellyfish
+rule temp_unzip:
+    input:
+        "data/reads/{p}{read}.fastq.gz"
+    output:
+        temp("data/reads/{p}{read}.fastq")
+    threads:
+        12
+    shell:
+        "unpigz -p {threads} -c {input} > {output}"
 
 rule count_pass1:
     input:
