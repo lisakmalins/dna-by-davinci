@@ -352,7 +352,7 @@ rule oligos_done:
 
 rule calc_scores:
     input:
-        dump="data/kmer-counts/{p}{read}_17mer_dumps.fa",
+        dump=get_jelly_dump,
         map="data/maps/{genome}_45mers_filtered.sam"
     log:
         "data/scores/{genome}_45mers_{p}{read}_scores.log"
