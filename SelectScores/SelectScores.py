@@ -18,7 +18,7 @@ except ImportError:
 from datetime import timedelta
 
 # Setup file IO
-usage = "Usage: python FilterByScore.py {input filename} {lower bound} {upper bound}"
+usage = "Usage: python SelectScores.py {input filename} {lower bound} {upper bound}"
 
 # Verify number of arguments
 if len(sys.argv) < 4 or len(sys.argv) > 6:
@@ -68,7 +68,7 @@ source.seek(0)
 percent = 10
 
 # Begin log with context
-log.write("Log file for FilterByScore.py\n")
+log.write("Log file for SelectScores.py\n")
 log.write("Oligos and scores read from: " + source.name + "\n")
 log.write("File size: " + str(filelength) + " bytes\n")
 log.write("Oligos with scores in range (" + str(lb) + ", " + str(ub) + ") wrtten to: " + output.name + "\n")
