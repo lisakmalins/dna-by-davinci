@@ -20,40 +20,66 @@ from datetime import timedelta
 # Setup file IO
 usage = "Usage: python SelectScores.py {input filename} {lower bound} {upper bound}"
 
-# Verify number of arguments
-if len(sys.argv) < 4 or len(sys.argv) > 6:
-    exit(usage)
-
-# Verify input filename
+# Alternate implementation for running from Snakemake
 try:
-    source = open(sys.argv[1], 'r')
-except FileNotFoundError:
-    if not sys.argv[1].isalpha():
+    source = open(snakemake.input[0], 'r')
+    output = open(snakemake.output[0], 'w')
+    try:
+        log = open(snakemake.log, 'w')
+        log.write("Kindly notify Lisa that snakemake.log works\n")
+    except:
+        try:
+            log = open(snakemake.log[0], 'w')
+            log.write("Kindly notify Lisa that snakemake.log[0] works\n")
+        except:
+            log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
+            log.write("Kindly berate Lisa that snakemake.log is not a thing\n")
+
+
+    # Read limits from file
+    # Format is peak lower_bound upper_bound
+    limits_file = open(snakemake.input[1], 'r')
+    limits_data = limits_file.read().strip()
+    peak = int(limits_data.split()[0])
+    lb = int(limits_data.split()[1])
+    ub = int(limits_data.split()[2])
+
+# Original implementation for running from command line
+except NameError:
+    # Verify number of arguments
+    if len(sys.argv) < 4 or len(sys.argv) > 6:
         exit(usage)
-    else:
-        exit("File " + str(sys.argv[1]) + " not found")
 
-# Use default if no output filename provided
-try:
-    output = open(sys.argv[4], 'w')
-except IndexError:
-    output = open(sys.argv[1].rsplit('.', 1)[0] + "_KS_filtered.sam", 'w')
+    # Verify input filename
+    try:
+        source = open(sys.argv[1], 'r')
+    except FileNotFoundError:
+        if not sys.argv[1].isalpha():
+            exit(usage)
+        else:
+            exit("File " + str(sys.argv[1]) + " not found")
 
-# Verify upper and lower bounds
-if not sys.argv[2].lstrip('-').isdigit() and sys.argv[3].lstrip('-').isdigit():
-    print("alice")
-    exit(usage)
-try:
-    lb, ub = int(sys.argv[2]), int(sys.argv[3])
-    if lb < 0 or ub < 0: raise ValueError
-except ValueError:
-    exit("Please provide score ranges as positive integers\n" + usage)
+    # Use default if no output filename provided
+    try:
+        output = open(sys.argv[4], 'w')
+    except IndexError:
+        output = open(sys.argv[1].rsplit('.', 1)[0] + "_KS_filtered.sam", 'w')
 
-# Setup log file
-try:
-    log = open(sys.argv[5], 'w')
-except IndexError:
-    log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
+    # Verify upper and lower bounds
+    if not sys.argv[2].lstrip('-').isdigit() and sys.argv[3].lstrip('-').isdigit():
+        print("alice")
+        exit(usage)
+    try:
+        lb, ub = int(sys.argv[2]), int(sys.argv[3])
+        if lb < 0 or ub < 0: raise ValueError
+    except ValueError:
+        exit("Please provide score ranges as positive integers\n" + usage)
+
+    # Setup log file
+    try:
+        log = open(sys.argv[5], 'w')
+    except IndexError:
+        log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
 
 # Echo arguments to screen
 print("Will read oligos from " + source.name)
@@ -71,6 +97,12 @@ percent = 10
 log.write("Log file for SelectScores.py\n")
 log.write("Oligos and scores read from: " + source.name + "\n")
 log.write("File size: " + str(filelength) + " bytes\n")
+try:
+    # Extra info if run from snakemake
+    log.write("Limits data provided by: " + limits_file.name + "\n")
+    log.write("K-mer histogram peak (coverage) recorded as: " + int(peak) + "\n")
+except:
+    pass
 log.write("Oligos with scores in range (" + str(lb) + ", " + str(ub) + ") wrtten to: " + output.name + "\n")
 log.write("Filtering began: " + ctime() + "\n")
 
