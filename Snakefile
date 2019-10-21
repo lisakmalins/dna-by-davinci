@@ -9,15 +9,6 @@ Download genome, place in data/seqs/ directory, and rename to match genome wildc
 
 configfile: "config.yaml"
 
-# Constrain wildcards based on config file
-def constrain(arg):
-    if type(arg) == "list":
-        return "|".join(arg)
-    else:
-        return(arg)
-wildcard_constraints:
-    read=constrain(config["reads"])
-
 rule targets:
     input:
         # Jellyfish arm
@@ -31,6 +22,9 @@ rule targets:
 
 
 ###--------------------- Download reads ---------------------###
+
+wildcard_constraints:
+    read=config["reads"]
 
 # Prefer quick_fastq_dump if sra file is prefetched, but do regular fastq_dump otherwise
 ruleorder: quick_fastq_dump > fastq_dump
@@ -475,6 +469,6 @@ rule plots_done:
         # K-mer score histogram plot
         expand("data/plots/{genome}_45mers_scores_histo.{ext}", \
         genome=config["genome"], ext = ["png", "pdf"])
-        
+
     output:
         touch("flags/plots.done")
