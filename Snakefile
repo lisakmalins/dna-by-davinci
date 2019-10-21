@@ -3,7 +3,7 @@
 
 """
 Preparatory steps:
-Download genome, place in data/seqs/ directory, and rename to match genome wildcard if necessary
+Download genome, place in data/genome/ directory, and rename to match genome wildcard if necessary
 (Optional) If you are downloading reads from NCBI and wish to prefetch the reads sra file before running fastq-dump, place the sra file in the data/reads/ directory
 """
 
@@ -275,7 +275,7 @@ rule calculate_peak:
 ###----------------------------- Download genome -----------------------------###
 # rule download_genome:
 #     output:
-#         "data/seqs/{genome}.fa"
+#         "data/genome/{genome}.fa"
 #     shell:
 #         """
 #         wget ftp://ftp.ensemblgenomes.org/pub/plants/release-36/fasta/zea_mays/dna/Zea_mays.AGPv4.dna.toplevel.fa.gz
@@ -285,7 +285,7 @@ rule calculate_peak:
 ###--------- Slice genome into overlapping 45-mers, map, and filter ----------###
 rule get_oligos:
     input:
-        "data/seqs/{genome}.fa"
+        "data/genome/{genome}.fa"
     output:
         "data/oligos/{genome}_45mers.fa"
     shell:
@@ -293,24 +293,24 @@ rule get_oligos:
 
 rule bwa_index:
     input:
-        "data/seqs/{genome}.fa",
+        "data/genome/{genome}.fa",
     output:
-        "data/seqs/{genome}.fa.amb",
-        "data/seqs/{genome}.fa.ann",
-        "data/seqs/{genome}.fa.bwt",
-        "data/seqs/{genome}.fa.pac",
-        "data/seqs/{genome}.fa.sa"
+        "data/genome/{genome}.fa.amb",
+        "data/genome/{genome}.fa.ann",
+        "data/genome/{genome}.fa.bwt",
+        "data/genome/{genome}.fa.pac",
+        "data/genome/{genome}.fa.sa"
     shell:
         "bwa index {input}"
 
 rule map_oligos:
     input:
-        "data/seqs/{genome}.fa.amb",
-        "data/seqs/{genome}.fa.ann",
-        "data/seqs/{genome}.fa.bwt",
-        "data/seqs/{genome}.fa.pac",
-        "data/seqs/{genome}.fa.sa",
-        genome="data/seqs/{genome}.fa",
+        "data/genome/{genome}.fa.amb",
+        "data/genome/{genome}.fa.ann",
+        "data/genome/{genome}.fa.bwt",
+        "data/genome/{genome}.fa.pac",
+        "data/genome/{genome}.fa.sa",
+        genome="data/genome/{genome}.fa",
         oligos="data/oligos/{genome}_45mers.fa"
     output:
         "data/maps/{genome}_45mers_unfiltered.sam"
