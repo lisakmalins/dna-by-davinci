@@ -183,8 +183,11 @@ if __name__ == '__main__':
     log.write("\nFiltering began at " + ctime())
 
     # Loop through sam file
-    for line in source.readlines():
-        if (source.tell() / filelength * 100) >=percent:
+    while True:
+        line = source.readline()
+        if not line: break
+
+        if (source.tell() / filelength * 100) >= percent:
             print("Progress: " + str(percent) + "% (" + ctime() + ")")
             percent += 10
 
