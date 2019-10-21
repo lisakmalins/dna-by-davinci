@@ -19,17 +19,7 @@ wildcard_constraints:
     read=constrain(config["reads"]),
     p=constrain(config["prefix"])
 
-# Limits for k-mer score filtering
-coverage = 34 #TODO write rule to calculate coverage instead of hardcoding
-# How many 17-mers in one 45-mer?    45 - 17 + 1 = 29
-# Ratios taken from Albert PS, et al. Whole-chromosome paints in maize reveal rearrangements, nuclear domains, and chromosomal relationships. Proceedings of the National Academy of Sciences. 2019 Jan 29;116(5):1679-85.
-lower = round((45 - 17 + 1) * coverage * 0.375)
-upper = round((45 - 17 + 1) * coverage * 1.8125)
-
 rule targets:
-    params:
-        lb=lower,
-        ub=upper
     input:
         # Jellyfish arm
         "flags/jellyfish.done",
@@ -38,8 +28,8 @@ rule targets:
         "flags/oligos.done",
 
         # Coverage plots
-        expand("data/plots/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.{{ext}}".format( \
-        genome=config["genome"], p=config["prefix"], read=config["reads"], lower=lower, upper=upper),
+        expand("data/plots/{genome}_45mers_{p}{read}_scores_coverage.{{ext}}".format( \
+        genome=config["genome"], p=config["prefix"], read=config["reads"]), \
         ext = ["png", "pdf"]),
 
         # K-mer count histogram plot
@@ -281,6 +271,14 @@ rule jellyfish_done:
     output:
         touch("flags/jellyfish.done")
 
+rule calculate_peak:
+    input:
+        get_jelly_histo
+    output:
+        "data/kmer-counts/limits.txt"
+    shell:
+        "Rscript RScripts/calculate_peak.R {input} {output}"
+
 ###----------------------------- Download genome -----------------------------###
 # rule download_genome:
 #     output:
@@ -373,11 +371,14 @@ rule score_histogram:
 
 rule score_select:
     input:
-        "data/scores/{genome}_45mers_{p}{read}_scores.sam"
+        "data/scores/{genome}_45mers_{p}{read}_scores.sam",
+        "data/kmer-counts/limits.txt"
     output:
-        "data/scores/{genome}_45mers_{p}{read}_scores_{lower}_{upper}.sam"
-    shell:
-        "python SelectScores/SelectScores.py {input} {lower} {upper} {output}"
+        "data/scores/{genome}_45mers_{p}{read}_scores_selected.sam"
+    log:
+        "data/scores/{genome}_45mers_{p}{read}_scores_selected.log"
+    script:
+        "SelectScores/SelectScores.py"
 
 
 ###-------------------- Generate coverage histogram data ---------------------###
@@ -427,18 +428,18 @@ rule make_windows3:
 
 rule binned_counts:
     input:
-        map="data/scores/{genome}_45mers_{p}{read}_scores_{lower}_{upper}.sam",
+        map="data/scores/{genome}_45mers_{p}{read}_scores_selected.sam",
         bins="data/coverage/{{genome}}_45mers_{binsize}_bins.bed".format(binsize=config["binsize"])
     output:
-        "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed"
+        "data/coverage/{genome}_45mers_{p}{read}_scores_coverage.bed"
     shell:
         "bash analysis/binned_read_counts.sh {input.map} {input.bins} {output}"
 
 rule binned_count_plot:
     input:
-        "data/coverage/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.bed"
+        "data/coverage/{genome}_45mers_{p}{read}_scores_coverage.bed"
     output:
-        "data/plots/{genome}_45mers_{p}{read}_scores_{lower}_{upper}_coverage.{ext}"
+        "data/plots/{genome}_45mers_{p}{read}_scores_coverage.{ext}"
     shell:
         "Rscript RScripts/binned_coverage.R {input} {output}"
 
