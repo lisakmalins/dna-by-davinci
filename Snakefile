@@ -246,7 +246,7 @@ rule count_pass1:
         "data/reads/{p}{read}.fastq"
     params:
         k=config["mer_size"],
-        bcsize=expected_kmers()
+        bcsize=expected_kmers
     output:
         temp("data/kmer-counts/{p}{read}.bc")
     threads:
