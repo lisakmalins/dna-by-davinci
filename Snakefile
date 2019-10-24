@@ -24,7 +24,9 @@ rule targets:
 ###--------------------- Download reads ---------------------###
 
 wildcard_constraints:
-    read=config["reads"]
+    read=config["reads"],
+    # Override snakemake default: p can be empty string
+    p=".*"
 
 # Prefer quick_fastq_dump if sra file is prefetched, but do regular fastq_dump otherwise
 ruleorder: quick_fastq_dump > fastq_dump
@@ -177,6 +179,9 @@ rule interleave:
     input:
         "data/reads/{p}{read}-1.fastq.gz",
         "data/reads/{p}{read}-2.fastq.gz"
+    wildcard_constraints:
+        # In this rule only, p must be non-empty
+        p=".+"
     output:
         "data/reads/{p}{read}.fastq.gz"
     threads:
