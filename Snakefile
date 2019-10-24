@@ -80,7 +80,7 @@ rule estimate_bases_gz:
         "data/reads/{read}_readlength.txt",
         "data/reads/{read}_numlines.txt"
     threads:
-        8
+        15
     run:
         # shell() automatically sets "bash strict mode" and will complain about pipefail.
         # set +o pipefail disables this.
@@ -128,7 +128,7 @@ rule uninterleave:
         temp("data/reads/{read}-1.fastq.gz"),
         temp("data/reads/{read}-2.fastq.gz")
     threads:
-        12
+        15
     shell:
         """
         cat {input} \
@@ -145,7 +145,7 @@ rule uninterleave_gz:
         temp("data/reads/{read}-1.fastq.gz"),
         temp("data/reads/{read}-2.fastq.gz")
     threads:
-        12
+        15
     shell:
         """
         unpigz -p {threads} -c {input} \
@@ -166,7 +166,7 @@ rule subsample:
     output:
         temp("data/reads/{p}{read}-{n}.fastq.gz")
     threads:
-        12
+        15
     shell:
         """
         unpigz -p {threads} -c {input} | \
@@ -185,7 +185,7 @@ rule interleave:
     output:
         "data/reads/{p}{read}.fastq.gz"
     threads:
-        12
+        15
     shell:
         """
         paste <(unpigz -p {threads} -c {input[0]} | paste - - - -) \
@@ -237,7 +237,7 @@ rule temp_unzip:
     output:
         temp("data/reads/{p}{read}.fastq")
     threads:
-        12
+        15
     shell:
         "unpigz -p {threads} -c {input} > {output}"
 
@@ -249,7 +249,8 @@ rule count_pass1:
         bcsize=expected_kmers()
     output:
         temp("data/kmer-counts/{p}{read}.bc")
-    threads: 16
+    threads:
+        15
     shell:
         "jellyfish bc -m {params.k} -C -s {params.bcsize} -t {threads} -o {output} {input}"
 
@@ -262,7 +263,8 @@ rule count_pass2:
         genomesize=str(config["genome_size"])
     output:
         "data/kmer-counts/{p}{read}_{k}mer_counts.jf"
-    threads: 16
+    threads:
+        16
     shell:
         "jellyfish count -m {params.k} -C -s {params.genomesize} -t {threads} --bc {input.bc} -o {output} {input.fastq}"
 
@@ -389,7 +391,7 @@ rule map_oligos:
     output:
         "data/maps/{genome}_45mers_unfiltered.sam"
     threads:
-        12
+        16
     shell:
         "bwa mem -t {threads} {input.genome} {input.oligos} > {output}"
 
