@@ -325,7 +325,7 @@ rule calculate_peak:
     output:
         "data/kmer-counts/limits.txt"
     shell:
-        "Rscript RScripts/calculate_peak.R {input} {output}"
+        "Rscript RScripts/calculate_limits.R {input} {output}"
 
 ###----------------------------- Download genome -----------------------------###
 # rule download_genome:
