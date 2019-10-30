@@ -353,7 +353,7 @@ rule relevant_seqs:
         temp("data/genome/{genome}_seqs.txt")
     run:
         with open(output[0], 'w') as f:
-            f.write("\n".join(config["sequences"]))
+            f.write("\n".join(list(map(lambda x: str(x), config["sequences"] + [""] ))))
 
 
 rule get_oligos:
