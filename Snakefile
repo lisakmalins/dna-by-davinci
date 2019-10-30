@@ -395,11 +395,52 @@ rule map_oligos:
     shell:
         "bwa mem -t {threads} {input.genome} {input.oligos} > {output}"
 
-rule filter_oligos:
+rule filter_scatter:
     input:
         "data/maps/{genome}_45mers_unfiltered.sam"
     output:
-        "data/maps/{genome}_45mers_filtered.sam"
+        temp(expand("data/maps/split/{genome}_45mers_unfiltered_{chr}.sam", chr=["header"] + config["sequences"] , genome="{genome}"))
+    run:
+        # Just in case: cast config sequences to strings
+        config_seqs = list(map(lambda x: str(x), config["sequences"]))
+
+        # Set up dictionary of output files
+        outfiles = dict()
+        outfiles["header"] = open(output[0], 'w')
+        for f in output[1:]:
+            for s in config_seqs:
+                if f.rsplit(".sam", 1)[0].split("unfiltered_")[-1] == s:
+                    outfiles[s] = open(f, 'w')
+
+
+        with open(input[0], 'r') as source:
+            # Write headers
+            sys.stderr.write("Splitting sam file into chunks for filtering by BWA scores.\n")
+            sys.stderr.write("Writing headers\n")
+            line = source.readline()
+            assert line[0] == "@", "Expected header line beginning with @, instead found\n{}".format(line)
+            while line[0] == "@":
+                outfiles["header"].write(line)
+                line = source.readline()
+
+            current = "placeholder"
+
+            sys.stderr.write("Writing sequences\n")
+            while line:
+                if line.split("_", 1)[0] != current:
+                    current = line.split("_", 1)[0]
+                    assert current in config_seqs, "Unrecognized sequence {}, line was\n{}".format(current, line)
+                    sys.stderr.write("Writing sequence {}\n".format(current))
+                while line.split("_", 1)[0] == current:
+                    outfiles[current].write(line)
+                    line = source.readline()
+
+
+rule filter_oligos:
+    input:
+        "data/maps/split/{genome}_45mers_unfiltered_{n}.sam"
+    output:
+        temp("data/maps/split/{genome}_45mers_filtered_{n}.sam")
     params:
         bwa_min_AS=45,
         bwa_max_XS=31,
@@ -410,9 +451,26 @@ rule filter_oligos:
     script:
         "FilterOligos/FilterOligos.py"
 
+rule filter_gather:
+    input:
+        "data/maps/split/{genome}_45mers_unfiltered_header.sam",
+        expand("data/maps/split/{{genome}}_45mers_filtered_{chr}.sam", chr=config["sequences"])
+    params:
+        logs=expand("data/maps/split/{genome}_45mers_filtered_{chr}.log", genome=GENOME, chr=config["sequences"])
+    output:
+        "data/maps/{genome}_45mers_filtered.sam",
+        "data/maps/{genome}_45mers_filtered.log"
+    shell:
+        """
+        # Concatenate output
+        for f in {input}; do cat $f >> {output[0]}; done
+        # Concatenate logs
+        for f in {params.logs}; do cat $f >> {output[1]}; done
+        """
+
 rule oligos_done:
     input:
-        "data/maps/{genome}_45mers_filtered.sam".format(genome=GENOME)
+        expand("data/maps/{genome}_45mers_filtered.{ext}", genome=GENOME, ext=["sam", "log"])
     output:
         touch("flags/oligos.done")
 
