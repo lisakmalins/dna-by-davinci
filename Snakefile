@@ -56,8 +56,7 @@ rule quick_fastq_dump:
 ruleorder: estimate_bases > estimate_bases_gz
 
 # Estimate number of bases in fastq reads.
-# Estimates read length using only reads.
-# Previous approach fragile if reads are short and headers are long.
+# Calculate from read line length and number of lines.
 rule estimate_bases:
     input:
         "data/reads/{read}.fastq"
@@ -71,9 +70,7 @@ rule estimate_bases:
    """
 
 # Estimate number of bases in gzipped fastq reads.
-# Use pigz to speed up unzipping.
-# pigz is overkill in the readlength calculation if piping to head.
-# Previous approach fragile if reads are short and headers are long.
+# Calculate from read line length and number of lines.
 rule estimate_bases_gz:
     input:
         "data/reads/{read}.fastq.gz"
@@ -81,13 +78,13 @@ rule estimate_bases_gz:
         "data/reads/{read}_readlength.txt",
         "data/reads/{read}_numlines.txt"
     threads:
-        15 # highly recommend putting these in config.yaml to make your software easier for end users to tailor
+        config["subsampling"]["threads"]
     shell: """
         echo "Estimating read length"
         gunzip -c {input} | head -n 1000 | paste - - - - | cut -f 2 | wc -L > {output[0]}
         unpigz -p {threads} -c {input} | wc -l {output[1]}
     """
-        
+
 checkpoint estimate_coverage:
     input:
         "data/reads/{read}_readlength.txt",
@@ -125,7 +122,7 @@ rule uninterleave:
         temp("data/reads/{read}-1.fastq.gz"),
         temp("data/reads/{read}-2.fastq.gz")
     threads:
-        15 # todo put in config.yaml
+        config["subsampling"]["threads"]
     shell:
         """
         cat {input} \
@@ -142,7 +139,7 @@ rule uninterleave_gz:
         temp("data/reads/{read}-1.fastq.gz"),
         temp("data/reads/{read}-2.fastq.gz")
     threads:
-        15 # todo put in config.yaml
+        config["subsampling"]["threads"]
     shell:
         """
         unpigz -p {threads} -c {input} \
@@ -163,7 +160,7 @@ rule subsample:
     output:
         temp("data/reads/{p}{read}-{n}.fastq.gz")
     threads:
-        15 # todo put in config.yaml
+        config["subsampling"]["threads"]
     shell:
         """
         unpigz -p {threads} -c {input} | \
@@ -182,7 +179,7 @@ rule interleave:
     output:
         "data/reads/{p}{read}.fastq.gz"
     threads:
-        15 # todo put in config.yaml
+        config["subsampling"]["threads"]
     shell:
         """
         paste <(unpigz -p {threads} -c {input[0]} | paste - - - -) \
@@ -234,7 +231,7 @@ rule temp_unzip:
     output:
         temp("data/reads/{p}{read}.fastq")
     threads:
-        15 # todo put in config.yaml
+        config["jellyfish"]["threads"]
     shell:
         "unpigz -p {threads} -c {input} > {output}"
 
@@ -247,7 +244,7 @@ rule count_pass1:
     output:
         temp("data/kmer-counts/{p}{read}.bc")
     threads:
-        15 # todo put in config.yaml
+        config["jellyfish"]["threads"]
     shell:
         "jellyfish bc -m {params.k} -C -s {params.bcsize} -t {threads} -o {output} {input}"
 
@@ -261,7 +258,7 @@ rule count_pass2:
     output:
         "data/kmer-counts/{p}{read}_{k}mer_counts.jf"
     threads:
-        16 # todo put in config.yaml
+        config["jellyfish"]["threads"]
     shell:
         "jellyfish count -m {params.k} -C -s {params.genomesize} -t {threads} --bc {input.bc} -o {output} {input.fastq}"
 
@@ -287,7 +284,7 @@ rule jellyfish_histo:
 def get_jelly_histo(wildcards):
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
         if int(f.read().strip()) > int(config["max_coverage"]):
-            prefix = "85seed_{}sub".format(config["max_coverage"]) # seed hard coded, may want to change eventually. Low-priority.
+            prefix = "85seed_{}sub".format(config["max_coverage"]) # TODO put seed in config
         else:
             prefix = ""
     return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(p=prefix, read=config["reads"], k=config["mer_size"])
@@ -358,11 +355,11 @@ rule get_oligos:
         "data/genome/{{genome}}.{}".format(FASTA_EXT),
         "data/genome/{genome}_seqs.txt"
     output:
-        "data/oligos/{genome}_45mers.fasta" # todo wildcard mer
+        "data/oligos/{genome}_45mers.fasta" # TODO wildcard mer
     log:
-        "data/oligos/{genome}_45mers.log" # todo wildcard mer
+        "data/oligos/{genome}_45mers.log" # TODO wildcard mer
     shell:
-        "python GetOligos/GetOligos.py {input} 45 3 {output} {log}" # todo put params in config.yaml
+        "python GetOligos/GetOligos.py {input} 45 3 {output} {log}" # TODO put params in config.yaml
 
 # one option: split oligo reads here, then spawn parallel map/filter rules on split
 
@@ -377,7 +374,7 @@ rule bwa_index:
         "data/genome/{{genome}}.{}.sa".format(FASTA_EXT)
     shell:
         "bwa index {input}"
-        
+
 rule map_oligos:
     input:
         "data/genome/{{genome}}.{}.amb".format(FASTA_EXT),
@@ -390,7 +387,7 @@ rule map_oligos:
     output:
         "data/maps/{genome}_45mers_unfiltered.sam"
     threads:
-        16 # todo put in config.yaml
+        config["mapping"]["threads"]
     shell:
         "bwa mem -t {threads} {input.genome} {input.oligos} > {output}"
 
@@ -429,7 +426,7 @@ rule calc_scores:
         "data/scores/{genome}_45mers_scores.sam"
     shell:
         "python CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
-        
+
 rule score_histogram:
     input:
         "data/scores/{genome}_45mers_scores.sam"
