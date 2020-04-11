@@ -29,3 +29,13 @@ sequences:
   - 8
   - 9
   - 10
+
+subsampling:
+  # Number of threads to use for checking coverage and subsampling if necessary
+  threads: 15
+jellyfish:
+  # Number of threads to use for counting with jellyfish
+  threads: 15
+mapping:
+  # Number of threads to use for mapping with bwa
+  threads: 16

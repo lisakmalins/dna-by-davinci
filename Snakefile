@@ -56,23 +56,21 @@ rule quick_fastq_dump:
 ruleorder: estimate_bases > estimate_bases_gz
 
 # Estimate number of bases in fastq reads.
+# Calculate from read line length and number of lines.
 rule estimate_bases:
     input:
         "data/reads/{read}.fastq"
     output:
         "data/reads/{read}_readlength.txt",
         "data/reads/{read}_numlines.txt"
-    run:
-        # shell() automatically sets "bash strict mode" and will complain about pipefail.
-        # set +o pipefail disables this.
-        shell("echo \"Estimating read length\" ")
-        # Get typical fastq line length by longest line in first 100
-        shell("set +o pipefail head -n 100 {input} | wc -L > {output[0]}")
-        # Get number of lines in fastq
-        shell("set +o pipefail wc -l {input} > {output[1]}")
+    shell: """
+        echo "Estimating read length"
+        head -n 1000 {input} | paste - - - - | cut -f 2 | wc -L > {output[0]}
+        wc -l {input} > {output[1]}
+   """
 
 # Estimate number of bases in gzipped fastq reads.
-# Use pigz to speed up unzipping.
+# Calculate from read line length and number of lines.
 rule estimate_bases_gz:
     input:
         "data/reads/{read}.fastq.gz"
@@ -80,16 +78,12 @@ rule estimate_bases_gz:
         "data/reads/{read}_readlength.txt",
         "data/reads/{read}_numlines.txt"
     threads:
-        15
-    run:
-        # shell() automatically sets "bash strict mode" and will complain about pipefail.
-        # set +o pipefail disables this.
-        shell("echo \"Estimating read length\" ")
-        # Get typical fastq line length by longest line in first 100
-        shell("set +o pipefail && unpigz -p {threads} -c {input} | head -n 100 | wc -L > {output[0]}")
-        # Get number of lines in fastq
-        shell("set +o pipefail && unpigz -p {threads} -c {input} | wc -l > {output[1]}")
-
+        config["subsampling"]["threads"]
+    shell: """
+        echo "Estimating read length"
+        gunzip -c {input} | head -n 1000 | paste - - - - | cut -f 2 | wc -L > {output[0]}
+        unpigz -p {threads} -c {input} | wc -l {output[1]}
+    """
 
 checkpoint estimate_coverage:
     input:
@@ -128,7 +122,7 @@ rule uninterleave:
         temp("data/reads/{read}-1.fastq.gz"),
         temp("data/reads/{read}-2.fastq.gz")
     threads:
-        15
+        config["subsampling"]["threads"]
     shell:
         """
         cat {input} \
@@ -145,7 +139,7 @@ rule uninterleave_gz:
         temp("data/reads/{read}-1.fastq.gz"),
         temp("data/reads/{read}-2.fastq.gz")
     threads:
-        15
+        config["subsampling"]["threads"]
     shell:
         """
         unpigz -p {threads} -c {input} \
@@ -166,7 +160,7 @@ rule subsample:
     output:
         temp("data/reads/{p}{read}-{n}.fastq.gz")
     threads:
-        15
+        config["subsampling"]["threads"]
     shell:
         """
         unpigz -p {threads} -c {input} | \
@@ -185,7 +179,7 @@ rule interleave:
     output:
         "data/reads/{p}{read}.fastq.gz"
     threads:
-        15
+        config["subsampling"]["threads"]
     shell:
         """
         paste <(unpigz -p {threads} -c {input[0]} | paste - - - -) \
@@ -237,7 +231,7 @@ rule temp_unzip:
     output:
         temp("data/reads/{p}{read}.fastq")
     threads:
-        15
+        config["jellyfish"]["threads"]
     shell:
         "unpigz -p {threads} -c {input} > {output}"
 
@@ -250,7 +244,7 @@ rule count_pass1:
     output:
         temp("data/kmer-counts/{p}{read}.bc")
     threads:
-        15
+        config["jellyfish"]["threads"]
     shell:
         "jellyfish bc -m {params.k} -C -s {params.bcsize} -t {threads} -o {output} {input}"
 
@@ -264,7 +258,7 @@ rule count_pass2:
     output:
         "data/kmer-counts/{p}{read}_{k}mer_counts.jf"
     threads:
-        16
+        config["jellyfish"]["threads"]
     shell:
         "jellyfish count -m {params.k} -C -s {params.genomesize} -t {threads} --bc {input.bc} -o {output} {input.fastq}"
 
@@ -290,7 +284,7 @@ rule jellyfish_histo:
 def get_jelly_histo(wildcards):
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
         if int(f.read().strip()) > int(config["max_coverage"]):
-            prefix = "85seed_{}sub".format(config["max_coverage"])
+            prefix = "85seed_{}sub".format(config["max_coverage"]) # TODO put seed in config
         else:
             prefix = ""
     return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(p=prefix, read=config["reads"], k=config["mer_size"])
@@ -361,11 +355,13 @@ rule get_oligos:
         "data/genome/{{genome}}.{}".format(FASTA_EXT),
         "data/genome/{genome}_seqs.txt"
     output:
-        "data/oligos/{genome}_45mers.fasta"
+        "data/oligos/{genome}_45mers.fasta" # TODO wildcard mer
     log:
-        "data/oligos/{genome}_45mers.log"
+        "data/oligos/{genome}_45mers.log" # TODO wildcard mer
     shell:
-        "python GetOligos/GetOligos.py {input} 45 3 {output} {log}"
+        "python GetOligos/GetOligos.py {input} 45 3 {output} {log}" # TODO put params in config.yaml
+
+# one option: split oligo reads here, then spawn parallel map/filter rules on split
 
 rule bwa_index:
     input:
@@ -391,7 +387,7 @@ rule map_oligos:
     output:
         "data/maps/{genome}_45mers_unfiltered.sam"
     threads:
-        16
+        config["mapping"]["threads"]
     shell:
         "bwa mem -t {threads} {input.genome} {input.oligos} > {output}"
 
@@ -474,6 +470,7 @@ rule oligos_done:
     output:
         touch("flags/oligos.done")
 
+# could put a checkpoint for split sam files here. Merge before doing calc scores and the rest
 
 ###------------------- Calculate k-mer scores for 45-mers --------------------###
 
