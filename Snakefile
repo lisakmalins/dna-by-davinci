@@ -66,7 +66,7 @@ rule estimate_bases:
     shell: """
         echo "Estimating read length"
         head -n 1000 {input} | paste - - - - | cut -f 2 | wc -L > {output[0]}
-        wc -l {input} > {output[1]}
+        wc -l < {input} > {output[1]}
    """
 
 # Estimate number of bases in gzipped fastq reads.
@@ -82,7 +82,7 @@ rule estimate_bases_gz:
     shell: """
         echo "Estimating read length"
         gunzip -c {input} | head -n 1000 | paste - - - - | cut -f 2 | wc -L > {output[0]}
-        unpigz -p {threads} -c {input} | wc -l {output[1]}
+        unpigz -p {threads} -c {input} | wc -l > {output[1]}
     """
 
 checkpoint estimate_coverage:
