@@ -319,7 +319,7 @@ rule calculate_peak:
     output:
         "data/kmer-counts/limits.txt"
     shell:
-        "Rscript RScripts/calculate_limits.R {input} {output}"
+        "Rscript davinci/R/calculate_limits.R {input} {output}"
 
 ###----------------------------- Download genome -----------------------------###
 # rule download_genome:
@@ -359,7 +359,7 @@ rule get_oligos:
     log:
         "data/oligos/{genome}_45mers.log" # TODO wildcard mer
     shell:
-        "python GetOligos/GetOligos.py {input} 45 3 {output} {log}" # TODO put params in config.yaml
+        "python davinci/GetOligos/GetOligos.py {input} 45 3 {output} {log}" # TODO put params in config.yaml
 
 # one option: split oligo reads here, then spawn parallel map/filter rules on split
 
@@ -445,7 +445,7 @@ rule filter_oligos:
         primer3_min_diff_TM=10,
         write_rejected=False
     script:
-        "FilterOligos/FilterOligos.py"
+        "davinci/FilterOligos/FilterOligos.py"
 
 rule filter_gather:
     input:
@@ -483,7 +483,7 @@ rule calc_scores:
     output:
         "data/scores/{genome}_45mers_scores.sam"
     shell:
-        "python CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
+        "python davinci/CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
 
 rule score_histogram:
     input:
@@ -491,7 +491,7 @@ rule score_histogram:
     output:
         "data/scores/{genome}_45mers_scores_histo.txt"
     shell:
-        "python ScoresHisto/ScoresHistogram.py {input} {output}"
+        "python davinci/ScoresHisto/ScoresHistogram.py {input} {output}"
 
 rule score_select:
     input:
@@ -502,7 +502,7 @@ rule score_select:
     log:
         "data/probes/{genome}_45mers_probes_selected.log"
     script:
-        "SelectScores/SelectScores.py"
+        "davinci/SelectScores/SelectScores.py"
 
 
 ###-------------------- Generate coverage histogram data ---------------------###
@@ -557,7 +557,7 @@ rule binned_counts:
     output:
         "data/coverage/{genome}_45mers_probes_coverage.bed"
     shell:
-        "bash analysis/binned_read_counts.sh {input.probes} {input.bins} {output}"
+        "bash davinci/BinnedCounts/binned_read_counts.sh {input.probes} {input.bins} {output}"
 
 
 ###-------------------------------- R plots ---------------------------------###
@@ -568,7 +568,7 @@ rule binned_count_plot:
     output:
         "data/plots/{genome}_45mers_probes_coverage.{ext}"
     shell:
-        "Rscript RScripts/binned_coverage.R {input} {output}"
+        "Rscript davinci/R/binned_coverage.R {input} {output}"
 
 rule kmer_count_plot:
     input:
@@ -578,7 +578,7 @@ rule kmer_count_plot:
     wildcard_constraints:
         read=config["reads"]
     shell:
-        "Rscript RScripts/kmer_count_histogram.R {input} {output}"
+        "Rscript davinci/R/kmer_count_histogram.R {input} {output}"
 
 rule kmer_score_plot:
     input:
@@ -586,7 +586,7 @@ rule kmer_score_plot:
     output:
         "data/plots/{genome}_45mers_scores_histo.{ext}"
     shell:
-        "Rscript RScripts/kmer_score_histogram.R {input} {output}"
+        "Rscript davinci/R/kmer_score_histogram.R {input} {output}"
 
 rule plots_done:
     input:
