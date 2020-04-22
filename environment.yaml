@@ -1,4 +1,4 @@
-name: michelangelo
+name: davinci
 channels:
   - conda-forge
   - bioconda

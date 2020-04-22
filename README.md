@@ -1,4 +1,4 @@
-# Maize by Michelangelo
+# DNA by da Vinci
 Pipeline for designing whole-chromosome oligo-FISH paints. Inspired by Jiming Jiang and Jim Birchler's [chromosome-specific FISH library in maize](https://doi.org/10.1073/pnas.1813957116) (codename: "Maize by Monet").
 
 Developed by Lisa Malins under direction from Kirk Amundson in the [Comai Lab](http://comailab.genomecenter.ucdavis.edu/index.php/Main_Page) at the [UC Davis Genome Center](https://genomecenter.ucdavis.edu/).
@@ -22,8 +22,8 @@ Developed by Lisa Malins under direction from Kirk Amundson in the [Comai Lab](h
 ## Test Case
 1. Git clone this repository.
 ```
-git clone https://github.com/lisakmalins/maize-by-michelangelo.git
-cd maize-by-michelangelo
+git clone https://github.com/lisakmalins/dna-by-davinci.git
+cd dna-by-davinci
 ```
 2. Install Conda.
 ```
@@ -32,7 +32,7 @@ cd maize-by-michelangelo
 3. Build and activate the Conda environment.
 ```
 conda env create -f environment.yaml
-source activate michelangelo
+source activate davinci
 ```
 4. Go to data/seqs/ folder, download reference genome, unzip, and rename.
 ```
@@ -61,7 +61,7 @@ grep "^>" Zea_mays.AGPv4.fa | head -n 10 > Zea_mays.AGPv4.keep
 
 7. Run snakemake!
 ```
-cd ../..  # Go back up to maize-by-michelangelo directory
+cd ../..  # Go back up to dna-by-davinci directory
 snakemake --cores 16
 ```
 

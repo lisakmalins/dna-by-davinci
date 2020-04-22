@@ -1,5 +1,5 @@
 # Lisa Malins
-# Snakefile for Maize by Michelangelo pipeline
+# Snakefile for DNA by da Vinci pipeline
 
 """
 Preparatory steps:
