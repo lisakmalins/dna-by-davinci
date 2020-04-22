@@ -155,8 +155,8 @@ rule subsample:
     wildcard_constraints:
         n="1|2"
     params:
-        seed=85,
-        coverage=float(config["max_coverage"]) / 100
+        seed=config["subsampling"]["seed"],
+        coverage=float(config["subsampling"]["max_coverage"]) / 100
     output:
         temp("data/reads/{p}{read}-{n}.fastq.gz")
     threads:
@@ -187,23 +187,23 @@ rule interleave:
         | tr '\t' '\n' | pigz -p {threads} > {output}
         """
 
-###--------------------- Count 17-mer frequencies with Jellyfish ---------------------###
+###--------------------- Count k-mer frequencies with Jellyfish ---------------------###
 
 # Calculate expected k-mers from formula
 def expected_kmers(wildcards=False):
     sys.stderr.write("Calculating hash size for jellyfish\n")
 
     G = config["genome_size"]
-    c = config["max_coverage"]
+    c = config["subsampling"]["max_coverage"]
     e = config["error_rate"]
-    k = config["mer_size"]
+    k = config["kmer_size"]
 
     # Replace c with actual coverage if less than max
     try:
         readsfile = "data/reads/{read}_approx_coverage.txt".format(read=config["reads"])
         with open(readsfile, 'r') as f:
             approx_coverage = int(f.read().strip())
-            if approx_coverage < int(config["max_coverage"]):
+            if approx_coverage < int(config["subsampling"]["max_coverage"]):
                 c = approx_coverage
     except FileNotFoundError:
         sys.stderr.write("expected_kmers function says: could not open {}\n".format(readsfile))
@@ -239,7 +239,7 @@ rule count_pass1:
     input:
         "data/reads/{p}{read}.fastq"
     params:
-        k=config["mer_size"],
+        k=config["kmer_size"],
         bcsize=expected_kmers
     output:
         temp("data/kmer-counts/{p}{read}.bc")
@@ -253,7 +253,7 @@ rule count_pass2:
         fastq="data/reads/{p}{read}.fastq",
         bc="data/kmer-counts/{p}{read}.bc"
     params:
-        k=config["mer_size"],
+        k=config["kmer_size"],
         genomesize=str(config["genome_size"])
     output:
         "data/kmer-counts/{p}{read}_{k}mer_counts.jf"
@@ -283,28 +283,34 @@ rule jellyfish_histo:
 # If coverage is manageable, they will request jellyfish on the original reads.
 def get_jelly_histo(wildcards):
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
-        if int(f.read().strip()) > int(config["max_coverage"]):
-            prefix = "85seed_{}sub".format(config["max_coverage"]) # TODO put seed in config
+        if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
+            prefix = "{}seed_{}sub".format(
+            config["subsampling"]["seed"],
+            config["subsampling"]["max_coverage"])
         else:
             prefix = ""
-    return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(p=prefix, read=config["reads"], k=config["mer_size"])
+    return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(p=prefix, read=config["reads"], k=config["kmer_size"])
 
 def get_jelly_dump(wildcards):
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
-        if int(f.read().strip()) > int(config["max_coverage"]):
-            prefix = "85seed_{}sub".format(config["max_coverage"])
+        if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
+            prefix = "{}seed_{}sub".format(
+            config["subsampling"]["seed"],
+            config["subsampling"]["max_coverage"])
         else:
             prefix = ""
-    return "data/kmer-counts/{p}{read}_{k}mer_dumps.fa".format(p=prefix, read=config["reads"], k=config["mer_size"])
+    return "data/kmer-counts/{p}{read}_{k}mer_dumps.fa".format(p=prefix, read=config["reads"], k=config["kmer_size"])
 
 def get_jelly_histo_plots(wildcards):
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
-        if int(f.read().strip()) > int(config["max_coverage"]):
-            prefix = "85seed_{}sub".format(config["max_coverage"])
+        if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
+            prefix = "{}seed_{}sub".format(
+            config["subsampling"]["seed"],
+            config["subsampling"]["max_coverage"])
         else:
             prefix = ""
     return expand("data/plots/{p}{read}_{k}mer_histo.{ext}", \
-    p=prefix, read=config["reads"], k=config["mer_size"], ext=["png", "pdf"])
+    p=prefix, read=config["reads"], k=config["kmer_size"], ext=["png", "pdf"])
 
 rule jellyfish_done:
     input:
@@ -331,7 +337,7 @@ rule calculate_peak:
 #         gunzip {genome}.fa.gz
 #         """
 
-###--------- Slice genome into overlapping 45-mers, map, and filter ----------###
+###--------- Slice genome into overlapping oligos, map, and filter ----------###
 
 # Handle genome to be either .fa or .fasta
 GENOME, FASTA_EXT = config["genome"].rsplit(".", 1)
@@ -355,11 +361,15 @@ rule get_oligos:
         "data/genome/{{genome}}.{}".format(FASTA_EXT),
         "data/genome/{genome}_seqs.txt"
     output:
-        "data/oligos/{genome}_45mers.fasta" # TODO wildcard mer
+        "data/oligos/{genome}_{o}mers.fasta"
     log:
-        "data/oligos/{genome}_45mers.log" # TODO wildcard mer
+        "data/oligos/{genome}_{o}mers.log"
+    params:
+        oligo_size=config["oligo_size"],
+        step_size=config["step_size"]
     shell:
-        "python davinci/GetOligos/GetOligos.py {input} 45 3 {output} {log}" # TODO put params in config.yaml
+        "python davinci/GetOligos/GetOligos.py {input} \
+        {params.oligo_size} {params.step_size} {output} {log}"
 
 # one option: split oligo reads here, then spawn parallel map/filter rules on split
 
@@ -383,9 +393,9 @@ rule map_oligos:
         "data/genome/{{genome}}.{}.pac".format(FASTA_EXT),
         "data/genome/{{genome}}.{}.sa".format(FASTA_EXT),
         genome="data/genome/{{genome}}.{}".format(FASTA_EXT),
-        oligos="data/oligos/{genome}_45mers.fasta"
+        oligos="data/oligos/{genome}_{o}mers.fasta"
     output:
-        "data/maps/{genome}_45mers_unfiltered.sam"
+        "data/maps/{genome}_{o}mers_unfiltered.sam"
     threads:
         config["mapping"]["threads"]
     shell:
@@ -393,9 +403,10 @@ rule map_oligos:
 
 rule filter_scatter:
     input:
-        "data/maps/{genome}_45mers_unfiltered.sam"
+        "data/maps/{genome}_{o}mers_unfiltered.sam"
     output:
-        temp(expand("data/maps/split/{genome}_45mers_unfiltered_{chr}.sam", chr=["header"] + config["sequences"] , genome="{genome}"))
+        temp(expand("data/maps/split/{{genome}}_{{o}}mers_unfiltered_{chr}.sam",
+        chr=["header"] + config["sequences"]))
     run:
         # Just in case: cast config sequences to strings
         config_seqs = list(map(lambda x: str(x), config["sequences"]))
@@ -434,9 +445,9 @@ rule filter_scatter:
 
 rule filter_oligos:
     input:
-        "data/maps/split/{genome}_45mers_unfiltered_{n}.sam"
+        "data/maps/split/{genome}_{o}mers_unfiltered_{n}.sam"
     output:
-        temp("data/maps/split/{genome}_45mers_filtered_{n}.sam")
+        temp("data/maps/split/{genome}_{o}mers_filtered_{n}.sam")
     params:
         bwa_min_AS=45,
         bwa_max_XS=31,
@@ -449,13 +460,15 @@ rule filter_oligos:
 
 rule filter_gather:
     input:
-        "data/maps/split/{genome}_45mers_unfiltered_header.sam",
-        expand("data/maps/split/{{genome}}_45mers_filtered_{chr}.sam", chr=config["sequences"])
+        "data/maps/split/{genome}_{o}mers_unfiltered_header.sam",
+        expand("data/maps/split/{{genome}}_{{o}}mers_filtered_{chr}.sam",
+        chr=config["sequences"])
     params:
-        logs=expand("data/maps/split/{genome}_45mers_filtered_{chr}.log", genome=GENOME, chr=config["sequences"])
+        logs=expand("data/maps/split/{{genome}}_{{o}}mers_filtered_{chr}.log",
+        chr=config["sequences"])
     output:
-        "data/maps/{genome}_45mers_filtered.sam",
-        "data/maps/{genome}_45mers_filtered.log"
+        "data/maps/{genome}_{o}mers_filtered.sam",
+        "data/maps/{genome}_{o}mers_filtered.log"
     shell:
         """
         # Concatenate output
@@ -466,41 +479,44 @@ rule filter_gather:
 
 rule oligos_done:
     input:
-        expand("data/maps/{genome}_45mers_filtered.{ext}", genome=GENOME, ext=["sam", "log"])
+        expand("data/maps/{genome}_{o}mers_filtered.{ext}",
+        genome=GENOME,
+        o=config["oligo_size"],
+        ext=["sam", "log"])
     output:
         touch("flags/oligos.done")
 
 # could put a checkpoint for split sam files here. Merge before doing calc scores and the rest
 
-###------------------- Calculate k-mer scores for 45-mers --------------------###
+###------------------- Calculate k-mer scores for oligos --------------------###
 
 rule calc_scores:
     input:
         dump=get_jelly_dump,
-        map="data/maps/{genome}_45mers_filtered.sam"
+        map="data/maps/{genome}_{o}mers_filtered.sam"
     log:
-        "data/scores/{genome}_45mers_scores.log"
+        "data/scores/{genome}_{o}mers_scores.log"
     output:
-        "data/scores/{genome}_45mers_scores.sam"
+        "data/scores/{genome}_{o}mers_scores.sam"
     shell:
         "python davinci/CalcScores/CalcKmerScores.py {input.dump} {input.map} {output}"
 
 rule score_histogram:
     input:
-        "data/scores/{genome}_45mers_scores.sam"
+        "data/scores/{genome}_{o}mers_scores.sam"
     output:
-        "data/scores/{genome}_45mers_scores_histo.txt"
+        "data/scores/{genome}_{o}mers_scores_histo.txt"
     shell:
         "python davinci/ScoresHisto/ScoresHistogram.py {input} {output}"
 
 rule score_select:
     input:
-        "data/scores/{genome}_45mers_scores.sam",
+        "data/scores/{genome}_{o}mers_scores.sam",
         "data/kmer-counts/limits.txt"
     output:
-        "data/probes/{genome}_45mers_probes_selected.sam"
+        "data/probes/{genome}_{o}mers_probes_selected.sam"
     log:
-        "data/probes/{genome}_45mers_probes_selected.log"
+        "data/probes/{genome}_{o}mers_probes_selected.log"
     script:
         "davinci/SelectScores/SelectScores.py"
 
@@ -510,7 +526,7 @@ rule score_select:
 # Make TSV file of all sequences and lengths in genome
 rule make_windows1:
     input:
-        "data/maps/{genome}_45mers_unfiltered.sam"
+        "data/maps/{{genome}}_{o}mers_unfiltered.sam".format(o=config["oligo_size"])
     output:
         temp("data/coverage/{genome}_allseqs.tsv")
     shell:
@@ -545,17 +561,18 @@ rule make_windows3:
     params:
         binsize=config["binsize"]
     output:
-        "data/coverage/{{genome}}_45mers_{binsize}_bins.bed".format(binsize=config["binsize"])
+        "data/coverage/{{genome}}_{{o}}mers_{binsize}_bins.bed".format(
+        binsize=config["binsize"])
     shell:
         "bedtools makewindows -g {input} -w {params.binsize} > {output}"
 
 
 rule binned_counts:
     input:
-        probes="data/probes/{genome}_45mers_probes_selected.sam",
-        bins="data/coverage/{{genome}}_45mers_{binsize}_bins.bed".format(binsize=config["binsize"])
+        probes="data/probes/{genome}_{o}mers_probes_selected.sam",
+        bins="data/coverage/{{genome}}_{{o}}mers_{binsize}_bins.bed".format(binsize=config["binsize"])
     output:
-        "data/coverage/{genome}_45mers_probes_coverage.bed"
+        "data/coverage/{genome}_{o}mers_probes_coverage.bed"
     shell:
         "bash davinci/BinnedCounts/binned_read_counts.sh {input.probes} {input.bins} {output}"
 
@@ -564,9 +581,9 @@ rule binned_counts:
 
 rule binned_count_plot:
     input:
-        "data/coverage/{genome}_45mers_probes_coverage.bed"
+        "data/coverage/{genome}_{o}mers_probes_coverage.bed"
     output:
-        "data/plots/{genome}_45mers_probes_coverage.{ext}"
+        "data/plots/{genome}_{o}mers_probes_coverage.{ext}"
     shell:
         "Rscript davinci/R/binned_coverage.R {input} {output}"
 
@@ -582,24 +599,26 @@ rule kmer_count_plot:
 
 rule kmer_score_plot:
     input:
-        "data/scores/{genome}_45mers_scores_histo.txt"
+        "data/scores/{genome}_{o}mers_scores_histo.txt"
     output:
-        "data/plots/{genome}_45mers_scores_histo.{ext}"
+        "data/plots/{genome}_{o}mers_scores_histo.{ext}"
     shell:
         "Rscript davinci/R/kmer_score_histogram.R {input} {output}"
 
 rule plots_done:
     input:
         # Binned coverage plot
-        expand("data/plots/{genome}_45mers_probes_coverage.{ext}", \
-        genome=GENOME, ext = ["png", "pdf"]),
+        expand("data/plots/{genome}_{o}mers_probes_coverage.{ext}", \
+        genome=GENOME, o=config["oligo_size"], ext = ["png", "pdf"]),
 
         # K-mer count histogram plot
         get_jelly_histo_plots,
 
         # K-mer score histogram plot
-        expand("data/plots/{genome}_45mers_scores_histo.{ext}", \
-        genome=GENOME, ext = ["png", "pdf"])
+        expand("data/plots/{genome}_{o}mers_scores_histo.{ext}", \
+        genome=GENOME,
+        o=config["oligo_size"],
+        ext = ["png", "pdf"])
 
     output:
         touch("flags/plots.done")

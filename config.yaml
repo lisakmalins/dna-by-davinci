@@ -3,17 +3,17 @@ reads: SRR2960981
 # Estimation of read error rate (recommended 0.01 for Illumina)
 error_rate: 0.01
 
-# Pipeline will approximate coverage of reads, which may be too high to manage in memory.
-# If so, a Snakemake rule will downsample the reads to this coverage (recommended 42).
-max_coverage: 42
-
 # Genome filename
 genome: "Zea_mays.AGPv4.fa"
 # Approximate genome size
 genome_size: 2500000000
 
 # K-mer size (recommended 17)
-mer_size: 17
+kmer_size: 17
+# Probe size (recommended 45)
+oligo_size: 45
+# Distance between start of consecutive oligos (recommended 3)
+step_size: 3
 
 binsize: 1000000
 
@@ -33,6 +33,11 @@ sequences:
 subsampling:
   # Number of threads to use for checking coverage and subsampling if necessary
   threads: 15
+  # Pipeline will approximate coverage of reads, which may be too high to manage in memory.
+  # If so, a Snakemake rule will downsample the reads to this coverage (recommended 42).
+  max_coverage: 42
+  # Seed to use for subsampling
+  seed: 85
 jellyfish:
   # Number of threads to use for counting with jellyfish
   threads: 15
