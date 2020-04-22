@@ -281,36 +281,26 @@ rule jellyfish_histo:
 # If coverage is too high and subsampling is necessary,
 # these functions will use a prefix to request jellyfish on subsampled reads.
 # If coverage is manageable, they will request jellyfish on the original reads.
-def get_jelly_histo(wildcards):
+def prefix():
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
         if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
-            prefix = "{}seed_{}sub".format(
-            config["subsampling"]["seed"],
-            config["subsampling"]["max_coverage"])
+            return "{}seed_{}sub".format(
+                    config["subsampling"]["seed"],
+                    config["subsampling"]["max_coverage"])
         else:
-            prefix = ""
-    return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(p=prefix, read=config["reads"], k=config["kmer_size"])
+            return ""
+
+def get_jelly_histo(wildcards):
+    return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(
+    p=prefix(), read=config["reads"], k=config["kmer_size"])
 
 def get_jelly_dump(wildcards):
-    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
-        if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
-            prefix = "{}seed_{}sub".format(
-            config["subsampling"]["seed"],
-            config["subsampling"]["max_coverage"])
-        else:
-            prefix = ""
-    return "data/kmer-counts/{p}{read}_{k}mer_dumps.fa".format(p=prefix, read=config["reads"], k=config["kmer_size"])
+    return "data/kmer-counts/{p}{read}_{k}mer_dumps.fa".format(
+    p=prefix(), read=config["reads"], k=config["kmer_size"])
 
 def get_jelly_histo_plots(wildcards):
-    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
-        if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
-            prefix = "{}seed_{}sub".format(
-            config["subsampling"]["seed"],
-            config["subsampling"]["max_coverage"])
-        else:
-            prefix = ""
     return expand("data/plots/{p}{read}_{k}mer_histo.{ext}", \
-    p=prefix, read=config["reads"], k=config["kmer_size"], ext=["png", "pdf"])
+    p=prefix(), read=config["reads"], k=config["kmer_size"], ext=["png", "pdf"])
 
 rule jellyfish_done:
     input:
