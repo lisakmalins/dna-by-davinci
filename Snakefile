@@ -341,7 +341,7 @@ rule calculate_peak:
 
 # Handle genome to be either .fa or .fasta
 GENOME, FASTA_EXT = config["genome"].rsplit(".", 1)
-assert FASTA_EXT.lower() in ["fasta", "fa"], \
+assert FASTA_EXT.lower() in ["fasta", "fa", "fna", "fas"], \
 "Sorry, I don't recognize genome file extension {}.\n \
 Make sure you put your genome assembly in data/genome/ \n \
 and list the filename in config.yaml.\n \
