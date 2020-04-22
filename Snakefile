@@ -531,8 +531,6 @@ rule make_windows1:
         temp("data/coverage/{genome}_allseqs.tsv")
     shell:
         """
-        module load bedtools2/2.27.0
-
         # Find end of headers
         HEADEREND=`grep -m 1 -v "^@" -n {input} | cut -f1 -d:`
 
