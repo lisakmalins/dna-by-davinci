@@ -454,8 +454,8 @@ rule filter_gather:
         expand("data/maps/split/{{genome}}_{{o}}mers_filtered_{chr}.sam",
         chr=config["sequences"])
     params:
-        logs=expand("data/maps/split/{{genome}}_{{o}}mers_filtered_{chr}.log",
-        chr=config["sequences"])
+        logs=lambda wcs: expand("data/maps/split/{genome}_{o}mers_filtered_{chr}.log",
+        genome=wcs.genome, o=wcs.o, chr=config["sequences"])
     output:
         "data/maps/{genome}_{o}mers_filtered.sam",
         "data/maps/{genome}_{o}mers_filtered.log"
