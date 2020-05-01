@@ -224,12 +224,12 @@ rule print_hash:
     run:
         print(expected_kmers())
 
-# Temporarily unzip reads for Jellyfish
-rule temp_unzip:
+# Unzip reads for Jellyfish
+rule unzip_reads:
     input:
         "data/reads/{p}{read}.fastq.gz"
     output:
-        temp("data/reads/{p}{read}.fastq")
+        "data/reads/{p}{read}.fastq"
     threads:
         config["jellyfish"]["threads"]
     shell:
