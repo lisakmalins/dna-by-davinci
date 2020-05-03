@@ -5,17 +5,15 @@
 """
 Script slices fasta genome assembly into overlapping oligos.
 
-Accepts as arguments the source filename, k-mer size, step size,
-    output filename (optional) and log filename (optional).
+Required argument: genome filename
+Optional arguments: kmer size, step size, output filename, log filename, sequences to keep.
 
-Usage:
-python GetOligos.py {genome filename} {keep sequences filename} {mer size} {step size} {optional: output filename} {optional: log filename}
-
-Example command:
-python GetOligos.py agra_cadabra_genome.fa 45 3 agra_cadabra_45mers.fa
+For more usage information:
+python GetOligos.py --help
 """
 
 import sys
+import argparse
 from os import stat
 from time import ctime
 try:
@@ -41,18 +39,21 @@ class Kmer:
         self.index += len(addition)
 
 
-# Finds headers and returns "ID" next header that that matters
-def NextHeader(source, log, good_seqs, line=" "):
+# Finds headers returns the id.
+# If user specified sequences to read, this function skips over sequences not in user's list.
+def NextHeader(source, log, line=" ", read_all_seqs=True, seqs_to_read=""):
     while True:
         # If the next line is a header
         if line[0] == ">":
             id = line[1:].split()[0]
-            if id in good_seqs:
+            if read_all_seqs:
+                return id
+            elif id in seqs_to_read:
                 return id
             else:
                 log.write("Ignored sequence:\n" + line)
 
-        line = source.readline()
+        line = args.genome.readline()
 
 # Reads the specified number of characters from source and returns string
 def ReadChars(source, length):
@@ -79,87 +80,74 @@ def ReadChars(source, length):
             sys.exit(1)
     return addition
 
-def SetupIO():
-    usage = "Usage: python GetOligos.py {genome filename} {keep sequences filename} {mer size} {step size} {optional: output name} {optional: log name}"
 
-    # Read arguments
-    try:
-        source = open(sys.argv[1], 'r')
-    except IndexError:
-        exit(usage)
-    except FileNotFoundError as e:
-        exit("Genome file " + e.filename + " not found.\n" + usage)
+def read_args():
+    parser = argparse.ArgumentParser("Get oligos from a genome assembly.\n")
+    parser.add_argument("-g", "--genome", type=argparse.FileType('r'), required=True, help="filename of genome assembly to get oligos from")
+    parser.add_argument("-m", "--mer-size", type=int, default=45, help="desired oligo size in bases")
+    parser.add_argument("-s", "--step-size", type=int, default=3, help="number of bases between start of consecutive oligos")
+    parser.add_argument("-o", "--output", type=argparse.FileType('w'), help="output filename")
+    parser.add_argument("-l", "--log", type=argparse.FileType('w'), help="log filename")
 
-    try:
-        keep = open(sys.argv[2], 'r')
-    except FileNotFoundError as e:
-        keep_usage = "This should be a text file of the sequences you want to get oligos from, one per line.\n"
+    sequence_args = parser.add_mutually_exclusive_group()
+    sequence_args.add_argument("--sequences", type=str, nargs="+", help="space-separated list of sequences to get oligos from (default: all)")
+    sequence_args.add_argument("--seqfile", type=argparse.FileType('r'), help="file with list of sequences to get oligos from, one per line (default: all)")
 
-        # Attempt to catch user forgetting keep file
-        if sys.argv[2].isdigit():
-            sys.stderr.write("I'm guessing you forgot to include a file of sequences to keep.\n{}{}\
-            ".format(keep_usage, usage))
-            exit(1)
+    args = parser.parse_args()
 
-        # User specified a keep file but doesn't exist
-        sys.stderr.write("Sequences to keep file " + e.filename + " not found.\n{}{}\
-        ".format(keep_usage, usage))
-        exit(1)
+    # Validate mer size and step size
+    if args.mer_size == 0:
+        raise Exception("Error: mer size must be greater than 0")
+    if args.step_size == 0:
+        raise Exception("Error: step size must be greater than 0")
 
-    try:
-        mer_size = int(sys.argv[3])
-        step_size = int(sys.argv[4])
-        if mer_size <= 0 or step_size <= 0:
-            raise ValueError()
-        if step_size > mer_size:
-            exit("Mer size must be greater than step size\n" + usage)
-    except IndexError:
-        exit(usage)
-    except ValueError:
-        exit("Please provide the mer-size and step-size as positive integers\n" + usage)
+    # Set default output and log filenames
+    if args.output is None:
+        args.output = open(args.genome.name.rsplit('.', 1)[0] + "_" + str(args.mer_size) + "mers.fa", 'w')
+    if args.log is None:
+        args.log = open(args.output.name.rsplit('.', 1)[0] + ".log", 'w')
 
-    try:
-        output = open(sys.argv[5], 'w')
-    except IndexError:
-        output = open(source.name.rsplit('.', 1)[0] + "_" + str(mer_size) + "mers.fa", 'w')
-
-    try:
-        log = open(sys.argv[6], 'w')
-    except IndexError:
-        log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
-
-    return source, mer_size, step_size, output, log, keep
-
+    return args
 
 #-------------------main-----------------------
+args = read_args()
 
-source, mer_size, step_size, output, log, keep = SetupIO()
+# Read all sequences unless user specified which to read
+read_all_seqs = True
+if args.sequences:
+    read_all_seqs = False
+    seqs_to_read = args.sequences
+elif args.seqfile:
+    read_all_seqs = False
+    seqs_to_read = list(map(lambda x: str(x).strip(), args.seqfile.readlines()))
+    args.seqfile.close()
 
-# Read headers from keep file and verify they all have unique ID's
-good_seqs = list(map(lambda x: str(x).strip(), keep.readlines()))
-keep.close()
 
-log.write("Log file for GetOligos.py\n")
-log.write("Genome file: " + source.name + "\n")
-log.write("Oligo size: " + str(mer_size))
-log.write(" Step size: " + str(step_size) + "\n")
-log.write("Sequences to keep read from: " + keep.name + "\n")
-log.write("\n".join(good_seqs))
-log.write("\n")
-log.write("Oligos written to: " + output.name + "\n\n")
+# Begin log file
+args.log.write("Log file for GetOligos.py\n")
+args.log.write("Genome file: " + args.genome.name + "\n")
+if not read_all_seqs:
+    args.log.write("Reading the following sequences only:\n")
+    args.log.write("\n".join(seqs_to_read))
+    args.log.write("\n")
+args.log.write("Oligo size: " + str(args.mer_size) + "\t")
+args.log.write(" Step size: " + str(args.step_size) + "\n")
+args.log.write("Oligos written to: " + args.output.name + "\n\n")
 
 
 # Get length of file for progress output
-filelength = float(stat(source.name).st_size)
+filelength = float(stat(args.genome.name).st_size)
 percent = 10
 
-print("Reading " + str(mer_size) + "-mers with step size of " + str(step_size) + \
-" from " + source.name + " and writing to " + output.name)
-print("Logging to: " + log.name)
+# Begin status messages to screen
+print("Reading " + str(args.mer_size) + "-mers with step size of " + str(args.step_size) + \
+" from " + args.genome.name + " and writing to " + args.output.name)
+print("Logging to: " + args.log.name)
 print("Genome slicing into oligos beginning at " + ctime())
 print("Progress messages will be displayed here.")
 print("Progress messages may not reach 100% because of ignored sequences.")
-log.write("\nGenome slicing into oligos beginning at " + ctime() + "\n\n")
+args.log.write("\nGenome slicing into oligos beginning at " + ctime() + "\n\n")
+
 time0 = process_time()
 
 # Create Kmer object
@@ -170,20 +158,24 @@ line = " "
 try:
     while True:
         # Progress messages
-        if (source.tell() / filelength * 100 >= percent):
+        if (args.genome.tell() / filelength * 100 >= percent):
             print("Read progress : " + str(percent) + "%")
             percent += 10
 
         # Get header, start new k-mer
-        id = NextHeader(source, log, good_seqs, line)
-        kmer.StartNew(id, ReadChars(source, 45))
+        if read_all_seqs:
+            id = NextHeader(args.genome, args.log, line)
+        else:
+            id = NextHeader(args.genome, args.log, line, read_all_seqs=False, seqs_to_read=seqs_to_read)
+
+        kmer.StartNew(id, ReadChars(args.genome, 45))
 
         # Get k-mers until header encountered
         while True:
-            output.write(">" + str(id) + "_" + str(kmer.index) + "\n")
-            output.write(kmer.seq + "\n")
+            args.output.write(">" + str(id) + "_" + str(kmer.index) + "\n")
+            args.output.write(kmer.seq + "\n")
             try:
-                kmer.Advance(ReadChars(source, 3))
+                kmer.Advance(ReadChars(args.genome, 3))
             # Catch header line and carry to next main loop iteration
             except HeaderException as e:
                 line = e.args[0]
@@ -191,13 +183,13 @@ try:
 
 # Aaaaaaand stick the landing
 except (IndexError, EOFError) as e:
-    source.close()
+    args.genome.close()
 
     proc_time = process_time() - time0
 
-    print("Finished writing " + str(mer_size) + "-mers to " + output.name)
+    print("Finished writing " + str(args.mer_size) + "-mers to " + args.output.name)
     print("Program finished successfully at " + ctime())
     print("Total time " + str(timedelta(seconds=proc_time)) + " (" + str(proc_time) + " seconds)")
-    print("Log available at " + log.name)
-    log.write("\nGenome slicing into oligos finished successfully at " + ctime() + "\n")
-    log.write("Total time " + str(timedelta(seconds=proc_time)) + " (" + str(proc_time) + " seconds)\n")
+    print("Log available at " + args.log.name)
+    args.log.write("\nGenome slicing into oligos finished successfully at " + ctime() + "\n")
+    args.log.write("Total time " + str(timedelta(seconds=proc_time)) + " (" + str(proc_time) + " seconds)\n")
