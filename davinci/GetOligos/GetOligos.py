@@ -168,14 +168,14 @@ try:
         else:
             id = NextHeader(args.genome, args.log, line, read_all_seqs=False, seqs_to_read=seqs_to_read)
 
-        kmer.StartNew(id, ReadChars(args.genome, 45))
+        kmer.StartNew(id, ReadChars(args.genome, args.mer_size))
 
         # Get k-mers until header encountered
         while True:
             args.output.write(">" + str(id) + "_" + str(kmer.index) + "\n")
             args.output.write(kmer.seq + "\n")
             try:
-                kmer.Advance(ReadChars(args.genome, 3))
+                kmer.Advance(ReadChars(args.genome, args.step_size))
             # Catch header line and carry to next main loop iteration
             except HeaderException as e:
                 line = e.args[0]
