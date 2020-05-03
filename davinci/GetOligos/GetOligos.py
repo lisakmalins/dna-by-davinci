@@ -50,8 +50,7 @@ def NextHeader(source, log, good_seqs, line=" "):
             if id in good_seqs:
                 return id
             else:
-                log.write("Ignored:\n" + line)
-                # print("I don't care about ", line.rstrip()) #debug
+                log.write("Ignored sequence:\n" + line)
 
         line = source.readline()
 
@@ -76,8 +75,8 @@ def ReadChars(source, length):
             raise EOFError
         # Anything else is a problem
         else:
-            print(next_letter + " <-- wtf")
-            exit("I literally can't even right now") #debug
+            print("Unexpected character", next_letter, "from file", source.name)
+            sys.exit(1)
     return addition
 
 def SetupIO():
@@ -158,6 +157,8 @@ print("Reading " + str(mer_size) + "-mers with step size of " + str(step_size) +
 " from " + source.name + " and writing to " + output.name)
 print("Logging to: " + log.name)
 print("Genome slicing into oligos beginning at " + ctime())
+print("Progress messages will be displayed here.")
+print("Progress messages may not reach 100% because of ignored sequences.")
 log.write("\nGenome slicing into oligos beginning at " + ctime() + "\n\n")
 time0 = process_time()
 
@@ -165,6 +166,7 @@ time0 = process_time()
 kmer = Kmer()
 line = " "
 
+# Main loop for getting oligos
 try:
     while True:
         # Progress messages
@@ -176,7 +178,7 @@ try:
         id = NextHeader(source, log, good_seqs, line)
         kmer.StartNew(id, ReadChars(source, 45))
 
-        # Print k-mers until header encountered
+        # Get k-mers until header encountered
         while True:
             output.write(">" + str(id) + "_" + str(kmer.index) + "\n")
             output.write(kmer.seq + "\n")
@@ -196,7 +198,6 @@ except (IndexError, EOFError) as e:
     print("Finished writing " + str(mer_size) + "-mers to " + output.name)
     print("Program finished successfully at " + ctime())
     print("Total time " + str(timedelta(seconds=proc_time)) + " (" + str(proc_time) + " seconds)")
-    print("Progress messages may not have reached 100% because of ignored sequences.")
     print("Log available at " + log.name)
     log.write("\nGenome slicing into oligos finished successfully at " + ctime() + "\n")
     log.write("Total time " + str(timedelta(seconds=proc_time)) + " (" + str(proc_time) + " seconds)\n")
