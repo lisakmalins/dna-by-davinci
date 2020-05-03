@@ -338,30 +338,21 @@ and list the filename in config.yaml.\n \
 Here's the genome filename currently listed in config.yaml:\n {}\n \
 ".format(FASTA_EXT, config["genome"])
 
-rule relevant_seqs:
-    output:
-        temp("data/genome/{genome}_seqs.txt")
-    run:
-        with open(output[0], 'w') as f:
-            f.write("\n".join(list(map(lambda x: str(x), config["sequences"] + [""] ))))
-
 
 rule get_oligos:
     input:
         "data/genome/{{genome}}.{}".format(FASTA_EXT),
-        "data/genome/{genome}_seqs.txt"
     output:
-        "data/oligos/{genome}_{o}mers.fasta"
+        "data/oligos/{genome}_{o}mers_{chr}.fasta"
     log:
-        "data/oligos/{genome}_{o}mers.log"
+        "data/oligos/{genome}_{o}mers_{chr}.log"
     params:
         oligo_size=config["oligo_size"],
         step_size=config["step_size"]
     shell:
-        "python davinci/GetOligos/GetOligos.py {input} \
-        {params.oligo_size} {params.step_size} {output} {log}"
-
-# one option: split oligo reads here, then spawn parallel map/filter rules on split
+        "python davinci/GetOligos/GetOligos.py -g {input} \
+        -m {params.oligo_size} -s {params.step_size} -o {output} -l {log}\
+        --sequences {wildcards.chr}"
 
 rule bwa_index:
     input:
@@ -383,61 +374,19 @@ rule map_oligos:
         "data/genome/{{genome}}.{}.pac".format(FASTA_EXT),
         "data/genome/{{genome}}.{}.sa".format(FASTA_EXT),
         genome="data/genome/{{genome}}.{}".format(FASTA_EXT),
-        oligos="data/oligos/{genome}_{o}mers.fasta"
+        oligos="data/oligos/{genome}_{o}mers_{chr}.fasta"
     output:
-        "data/maps/{genome}_{o}mers_unfiltered.sam"
+        "data/maps/split/{genome}_{o}mers_unfiltered_{chr}.sam"
     threads:
         config["mapping"]["threads"]
     shell:
         "bwa mem -t {threads} {input.genome} {input.oligos} > {output}"
 
-rule filter_scatter:
-    input:
-        "data/maps/{genome}_{o}mers_unfiltered.sam"
-    output:
-        temp(expand("data/maps/split/{{genome}}_{{o}}mers_unfiltered_{chr}.sam",
-        chr=["header"] + config["sequences"]))
-    run:
-        # Just in case: cast config sequences to strings
-        config_seqs = list(map(lambda x: str(x), config["sequences"]))
-
-        # Set up dictionary of output files
-        outfiles = dict()
-        outfiles["header"] = open(output[0], 'w')
-        for f in output[1:]:
-            for s in config_seqs:
-                if f.rsplit(".sam", 1)[0].split("unfiltered_")[-1] == s:
-                    outfiles[s] = open(f, 'w')
-
-
-        with open(input[0], 'r') as source:
-            # Write headers
-            sys.stderr.write("Splitting sam file into chunks for filtering by BWA scores.\n")
-            sys.stderr.write("Writing headers\n")
-            line = source.readline()
-            assert line[0] == "@", "Expected header line beginning with @, instead found\n{}".format(line)
-            while line[0] == "@":
-                outfiles["header"].write(line)
-                line = source.readline()
-
-            current = "placeholder"
-
-            sys.stderr.write("Writing sequences\n")
-            while line:
-                if line.split("_", 1)[0] != current:
-                    current = line.split("_", 1)[0]
-                    assert current in config_seqs, "Unrecognized sequence {}, line was\n{}".format(current, line)
-                    sys.stderr.write("Writing sequence {}\n".format(current))
-                while line.split("_", 1)[0] == current:
-                    outfiles[current].write(line)
-                    line = source.readline()
-
-
 rule filter_oligos:
     input:
-        "data/maps/split/{genome}_{o}mers_unfiltered_{n}.sam"
+        "data/maps/split/{genome}_{o}mers_unfiltered_{chr}.sam"
     output:
-        temp("data/maps/split/{genome}_{o}mers_filtered_{n}.sam")
+        "data/maps/split/{genome}_{o}mers_filtered_{chr}.sam"
     params:
         bwa_min_AS=45,
         bwa_max_XS=31,
@@ -448,31 +397,26 @@ rule filter_oligos:
     script:
         "davinci/FilterOligos/FilterOligos.py"
 
-rule filter_gather:
+rule merge_filtered:
     input:
-        "data/maps/split/{genome}_{o}mers_unfiltered_header.sam",
         expand("data/maps/split/{{genome}}_{{o}}mers_filtered_{chr}.sam",
         chr=config["sequences"])
-    params:
-        logs=lambda wcs: expand("data/maps/split/{genome}_{o}mers_filtered_{chr}.log",
-        genome=wcs.genome, o=wcs.o, chr=config["sequences"])
     output:
-        "data/maps/{genome}_{o}mers_filtered.sam",
-        "data/maps/{genome}_{o}mers_filtered.log"
-    shell:
+        "data/maps/{genome}_{o}mers_filtered.sam"
+    shell:"""
+        # Get @SQ headers only from first file
+        grep "^@SQ" {input} > {output}
+        # Get non-header lines from all files
+        for f in {input}; do grep -v "^@" $f >> {output}; done
         """
-        # Concatenate output
-        for f in {input}; do cat $f >> {output[0]}; done
-        # Concatenate logs
-        for f in {params.logs}; do cat $f >> {output[1]}; done
-        """
+# Merging filtered oligo files is necessary while CalcScores.py reads scores into memory.
+# If CalcScores uses a database instead, it could run in parallel.
 
 rule oligos_done:
     input:
-        expand("data/maps/{genome}_{o}mers_filtered.{ext}",
+        expand("data/maps/{genome}_{o}mers_filtered.sam",
         genome=GENOME,
-        o=config["oligo_size"],
-        ext=["sam", "log"])
+        o=config["oligo_size"])
     output:
         touch("flags/oligos.done")
 
@@ -516,9 +460,9 @@ rule score_select:
 # Make TSV file of all sequences and lengths in genome
 rule make_windows1:
     input:
-        "data/maps/{{genome}}_{o}mers_unfiltered.sam".format(o=config["oligo_size"])
+        "data/maps/{{genome}}_{o}mers_filtered.sam".format(o=config["oligo_size"])
     output:
-        temp("data/coverage/{genome}_allseqs.tsv")
+        "data/coverage/{genome}_allseqs.tsv"
     shell:
         """
         # Find end of headers
