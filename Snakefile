@@ -405,7 +405,7 @@ rule merge_filtered:
         "data/maps/{genome}_{o}mers_filtered.sam"
     shell:"""
         # Get @SQ headers only from first file
-        grep "^@SQ" {input} > {output}
+        grep "^@SQ" {input[0]} > {output}
         # Get non-header lines from all files
         for f in {input}; do grep -v "^@" $f >> {output}; done
         """
