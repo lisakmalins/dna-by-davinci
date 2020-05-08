@@ -153,6 +153,25 @@ if __name__ == "__main__":
     if log_missing:
         missing = open(log.name + ".missing", 'w')
 
+    # Take a quick look at oligos file BEFORE loading k-mer dictionary loads into memory
+    i = 0
+    # Find first non-comment line
+    while True:
+        i += 1
+        line = oligos.readline()
+        if line[0] != "@":
+            break
+    # Verify line has 15 fields
+    if len(line.split('\t')) != 15:
+        error_message = "ERROR: Unexpected input from line {} of oligo file {}.\n" \
+        "Expected 15 fields, instead found {} fields.\n" \
+        "Line was:\n{}".format(i, oligos.name, len(line.split('\t')), line)
+        print(error_message)
+        log.write(error_message)
+        log.close()
+        sys.exit(1)
+    # If file looks good, reset to beginning
+    oligos.seek(0)
 
     # Setup nested kmer dictionary
     nkd = NestedKmerDict()
