@@ -318,15 +318,16 @@ rule calculate_peak:
         "Rscript davinci/R/calculate_limits.R {input} {output}"
 
 ###----------------------------- Download genome -----------------------------###
-# rule download_genome:
-#     output:
-#         "data/genome/{{genome}}.{}"
-#     shell:
-#         """
-#         wget ftp://ftp.ensemblgenomes.org/pub/plants/release-36/fasta/zea_mays/dna/Zea_mays.AGPv4.dna.toplevel.fa.gz
-#         gunzip {genome}.fa.gz
-#         """
-
+rule download_genome:
+    output:
+        "data/genome/{}".format(config["genome"])
+    params:
+        url=config["genome_download"]
+    shell:
+        """
+        wget {params.url}
+        """
+#TODO check if downloaded genome is gzipped
 ###--------- Slice genome into overlapping oligos, map, and filter ----------###
 
 # Handle genome to be either .fa or .fasta
