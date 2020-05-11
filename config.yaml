@@ -1,12 +1,15 @@
-reads: SRR2960981
+# This is for a rerun of davinci on arabidopsis with better reads.
+# Folder is called "arabidopsis-by-artemisia" on bruno.
+
+reads: ERR2929052
 
 # Estimation of read error rate (recommended 0.01 for Illumina)
 error_rate: 0.01
 
 # Genome filename
-genome: "Zea_mays.AGPv4.fa"
+genome: "TAIR10_chr_all.fas"
 # Approximate genome size
-genome_size: 2500000000
+genome_size: 135000000
 
 # K-mer size (recommended 17)
 kmer_size: 17
@@ -24,23 +27,18 @@ sequences:
   - 3
   - 4
   - 5
-  - 6
-  - 7
-  - 8
-  - 9
-  - 10
 
 subsampling:
   # Number of threads to use for checking coverage and subsampling if necessary
-  threads: 15
+  threads: 20
   # Pipeline will approximate coverage of reads, which may be too high to manage in memory.
   # If so, a Snakemake rule will downsample the reads to this coverage (recommended 42).
-  max_coverage: 42
+  max_coverage: 60
   # Seed to use for subsampling
   seed: 85
 jellyfish:
   # Number of threads to use for counting with jellyfish
-  threads: 15
+  threads: 20
 mapping:
   # Number of threads to use for mapping with bwa
-  threads: 16
+  threads: 2
