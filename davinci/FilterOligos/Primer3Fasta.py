@@ -1,5 +1,6 @@
 import sys
 import argparse
+import re
 try:
     import primer3
 except ImportError:
@@ -34,7 +35,7 @@ def primer3filter(seq, min_TM=37, max_HTM=35, min_diff_TM=10):
         return False
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser("Filter oligos from fasta with primer3.\n")
+    parser = argparse.ArgumentParser("Filter oligos from fasta. Check for homopolymers and primer3 criteria.\n")
 
     # I/O
     parser.add_argument("-i", "--in", dest="oligos", type=argparse.FileType('r'), help="input fasta filename")
@@ -47,6 +48,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    homopolymer = re.compile("N|AAAAA|CCCCC|GGGGG|TTTTT")
+
     # Loop through file
     while True:
         header = args.oligos.readline()
@@ -54,9 +57,17 @@ if __name__ == '__main__':
         assert header[0] == ">"
         seq = args.oligos.readline()
 
-        filter = primer3filter(seq.rstrip(), args.min_tm, args.max_htm, args.min_dtm)
-        if not filter:
-            args.output.write(header)
-            args.output.write(seq)
-        else:
-            sys.stderr.write("Sequence {} failed primer3 filter, reason: {}\n".format(header.lstrip(">").rstrip("\n"), filter))
+        # Check for N's and homopolymers of 5 bases or more
+        match = homopolymer.search(seq)
+        if match:
+            sys.stderr.write("Sequence {} failed homopolymer filter, sequence contains {}\n".format(header.strip(">\n"), match.group()))
+            continue
+
+        # Check for primer3 criteria
+        p3filter = primer3filter(seq.rstrip(), args.min_tm, args.max_htm, args.min_dtm)
+        if p3filter:
+            sys.stderr.write("Sequence {} failed primer3 filter, reason: {}\n".format(header.lstrip(">").rstrip("\n"), p3filter))
+
+        # Write sequence in fasta format if passes both filters
+        args.output.write(header)
+        args.output.write(seq)
