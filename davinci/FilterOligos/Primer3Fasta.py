@@ -46,9 +46,11 @@ if __name__ == '__main__':
     parser.add_argument("--max-htm", type=int, default=35, help="maximum hairpin melting temperature (default: %(default)s)")
     parser.add_argument("--min-dtm", type=int, default=10, help="minimum difference between melting temperature and hairpin melting temperature (default: %(default)s)")
 
+    parser.add_argument("--homopolymer-length", type=int, default=5, help="minimum length of homopolymer to filter out (default: %(default)s)")
+
     args = parser.parse_args()
 
-    homopolymer = re.compile("N|AAAAA|CCCCC|GGGGG|TTTTT")
+    homopolymer = re.compile("N|A{{{n}}}|C{{{n}}}|G{{{n}}}|T{{{n}}}".format(n=args.homopolymer_length))
 
     # Loop through file
     while True:
