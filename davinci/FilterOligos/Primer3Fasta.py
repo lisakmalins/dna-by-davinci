@@ -1,0 +1,62 @@
+import sys
+import argparse
+try:
+    import primer3
+except ImportError:
+    sys.stderr.write("primer3-py not installed")
+    sys.exit(1)
+
+"""
+Returns reason for sequences that fail.
+Returns False for good sequences.
+"""
+def primer3filter(seq, min_TM=37, max_HTM=35, min_diff_TM=10):
+
+    # Calculate
+    TM = primer3.calcTm(seq)
+    HTM = primer3.calcHairpinTm(seq)
+
+    # If melting temperature is too low, filter out
+    if TM < min_TM:
+        return "melting temp too low"
+
+    # If hairpin melting temperature is too high, filter out
+    elif HTM > max_HTM:
+        return "hairpin melting temp too high"
+
+    # If melting temperature and hairpin melting temperature
+    # are too close together, filter out
+    elif (TM - HTM) < min_diff_TM:
+        return "difference between melting temp and hairpin melting temp too high"
+
+    # If sequence will make a good probe, return false (do not filter)
+    else:
+        return False
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser("Filter oligos from fasta with primer3.\n")
+
+    # I/O
+    parser.add_argument("-i", "--in", dest="oligos", type=argparse.FileType('r'), help="input fasta filename")
+    parser.add_argument("-o", "--output", type=argparse.FileType('w'), default="/dev/fd/1", help="output filename (default: standard out)")
+
+    # Primer3 arguments
+    parser.add_argument("--min-tm", type=int, default=37, help="minimum melting temperature (default: %(default)s)")
+    parser.add_argument("--max-htm", type=int, default=35, help="maximum hairpin melting temperature (default: %(default)s)")
+    parser.add_argument("--min-dtm", type=int, default=10, help="minimum difference between melting temperature and hairpin melting temperature (default: %(default)s)")
+
+    args = parser.parse_args()
+
+    # Loop through file
+    while True:
+        header = args.oligos.readline()
+        if not header: break
+        assert header[0] == ">"
+        seq = args.oligos.readline()
+
+        filter = primer3filter(seq.rstrip(), args.min_tm, args.max_htm, args.min_dtm)
+        if not filter:
+            args.output.write(header)
+            args.output.write(seq)
+        else:
+            sys.stderr.write("Sequence {} failed primer3 filter, reason: {}\n".format(header.lstrip(">").rstrip("\n"), filter))
