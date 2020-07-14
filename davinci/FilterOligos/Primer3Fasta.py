@@ -28,7 +28,7 @@ def primer3filter(seq, min_TM=37, max_HTM=35, min_diff_TM=10):
     # If melting temperature and hairpin melting temperature
     # are too close together, filter out
     elif (TM - HTM) < min_diff_TM:
-        return "difference between melting temp and hairpin melting temp too high"
+        return "difference between melting temp and hairpin melting temp too small"
 
     # If sequence will make a good probe, return false (do not filter)
     else:
@@ -50,14 +50,24 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # Regex pattern which matches any sequence containing N
+    # or a homopolymer of user-specified length or greater
     homopolymer = re.compile("N|A{{{n}}}|C{{{n}}}|G{{{n}}}|T{{{n}}}".format(n=args.homopolymer_length))
 
     # Loop through file
+    linecount = 0
     while True:
+        # Read and confirm header
         header = args.oligos.readline()
         if not header: break
-        assert header[0] == ">"
+        linecount += 1
+        assert header[0] == ">", \
+        "Oligo file {} not in recognized fasta format\nExpected fasta header on line {}, " \
+        "instead found:\n{}\n".format(args.oligos.name, linecount, header)
+
+        # Read sequence
         seq = args.oligos.readline()
+        linecount += 1
 
         # Check for N's and homopolymers of 5 bases or more
         match = homopolymer.search(seq)
