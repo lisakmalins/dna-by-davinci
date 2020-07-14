@@ -79,6 +79,7 @@ if __name__ == '__main__':
         p3filter = primer3filter(seq.rstrip(), args.min_tm, args.max_htm, args.min_dtm)
         if p3filter:
             sys.stderr.write("Sequence {} failed primer3 filter, reason: {}\n".format(header.lstrip(">").rstrip("\n"), p3filter))
+            continue
 
         # Write sequence in fasta format if passes both filters
         args.output.write(header)
