@@ -35,10 +35,10 @@ def primer3filter(seq, min_TM=37, max_HTM=35, min_diff_TM=10):
         return False
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser("Filter oligos from fasta. Check for homopolymers and primer3 criteria.\n")
+    parser = argparse.ArgumentParser(description="Filter oligos from fasta. Check for homopolymers and primer3 criteria.\n")
 
     # I/O
-    parser.add_argument("-i", "--in", dest="oligos", type=argparse.FileType('r'), help="input fasta filename")
+    parser.add_argument("-i", "--in", dest="oligos", type=argparse.FileType('r'), help="input fasta filename", required=True)
     parser.add_argument("-o", "--output", type=argparse.FileType('w'), default="/dev/fd/1", help="output filename (default: standard out)")
 
     # Primer3 arguments
