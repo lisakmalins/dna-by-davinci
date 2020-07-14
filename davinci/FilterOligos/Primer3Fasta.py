@@ -48,6 +48,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--homopolymer-length", type=int, default=5, help="minimum length of homopolymer to filter out (default: %(default)s)")
 
+    parser.add_argument("--verbose", action="store_true", help="print filtered records and reason for filtering to standard error (default: do not print)")
+
     args = parser.parse_args()
 
     # Regex pattern which matches any sequence containing N
@@ -72,13 +74,15 @@ if __name__ == '__main__':
         # Check for N's and homopolymers of 5 bases or more
         match = homopolymer.search(seq)
         if match:
-            sys.stderr.write("Sequence {} failed homopolymer filter, sequence contains {}\n".format(header.strip(">\n"), match.group()))
+            if args.verbose:
+                sys.stderr.write("Sequence {} failed homopolymer filter, sequence contains {}\n".format(header.strip(">\n"), match.group()))
             continue
 
         # Check for primer3 criteria
         p3filter = primer3filter(seq.rstrip(), args.min_tm, args.max_htm, args.min_dtm)
         if p3filter:
-            sys.stderr.write("Sequence {} failed primer3 filter, reason: {}\n".format(header.lstrip(">").rstrip("\n"), p3filter))
+            if args.verbose:
+                sys.stderr.write("Sequence {} failed primer3 filter, reason: {}\n".format(header.lstrip(">").rstrip("\n"), p3filter))
             continue
 
         # Write sequence in fasta format if passes both filters
