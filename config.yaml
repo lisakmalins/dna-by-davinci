@@ -30,6 +30,10 @@ sequences:
   - 4
   - 5
 
+
+bed_regions:
+  - example.bed
+
 subsampling:
   # Number of threads to use for checking coverage and subsampling if necessary
   threads: 20

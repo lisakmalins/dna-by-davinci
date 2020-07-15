@@ -9,6 +9,16 @@ Download genome, place in data/genome/ directory, and rename to match genome wil
 
 configfile: "config.yaml"
 
+def selected_oligos_by_bed():
+    if config.get("bed_regions") is not None:
+        return ["data/probes/{genome}_{o}mers_probes_selected_{region}.bam".format(\
+            genome=config["genome"].rsplit(".f", 1)[0], \
+            o=config["oligo_size"], \
+            region=region.rsplit(".bed")[0]) \
+        for region in config.get("bed_regions")]
+    else:
+        return []
+
 rule targets:
     input:
         # Jellyfish arm
@@ -18,7 +28,9 @@ rule targets:
         "flags/oligos.done",
 
         # Plots
-        "flags/plots.done"
+        "flags/plots.done",
+
+        selected_oligos_by_bed()
 
 
 ###--------------------- Download reads ---------------------###
@@ -555,3 +567,13 @@ rule plots_done:
 
     output:
         touch("flags/plots.done")
+
+
+rule bedtools_intersect:
+    input:
+        sam="data/probes/{genome}_{o}mers_probes_selected.sam",
+        bed="{region}.bed"
+    output:
+        "data/probes/{genome}_{o}mers_probes_selected_{region}.bam"
+    shell:
+        "samtools view -b {input.sam} | bedtools intersect -a - -b {input.bed} > {output}"
