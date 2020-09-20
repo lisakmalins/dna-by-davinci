@@ -6,10 +6,11 @@
 Python program to filter hybridization oligos using bwa and primer3.
 Based on bwa.py and primer3_filter.py from Chorus2 by zhangtaolab on GitHub.
 
-Filtering ranges can be configured with Snakemake.
-
 Example command:
-python3 FilterOligos.py unfiltered.sam filtered.sam
+python FilterOligos.py -i unfiltered.sam -o filtered.sam
+
+For full usage info, please see:
+python FilterOligos.py --help
 """
 
 import sys
@@ -24,6 +25,7 @@ try:
 except ImportError:
     from time import clock as process_time
 from datetime import timedelta
+import argparse
 
 # Filter out sequences with less than 70% homology
 def bwa_filter(line, min_AS=45, max_XS=31):
@@ -110,73 +112,58 @@ def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
 #-------------------main-----------------------
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Filter oligos from SAM file based on BWA mapping statistics.\n")
+
+    # I/O
+    parser.add_argument("-i", "--in", dest="source", type=argparse.FileType('r'), help="input SAM filename", required=True)
+    parser.add_argument("-o", "--output", type=argparse.FileType('w'), default="/dev/fd/1", help="args.output filename (default: standard out)")
+
+    # BWA filtering
+    parser.add_argument("--bwa-min-AS", dest="min_AS", type=int, default=45, help="minimum BWA alignment score (default: %(default)s)")
+    parser.add_argument("--bwa-max-XS", dest="max_XS", type=int, default=31, help="maximum BWA suboptimal alignment score (default: %(default)s)")
+
+    # Primer3 arguments
+    parser.add_argument("--min-TM", type=int, default=37, help="minimum melting temperature (default: %(default)s)")
+    parser.add_argument("--max-HTM", type=int, default=35, help="maximum hairpin melting temperature (default: %(default)s)")
+    parser.add_argument("--min-diff-TM", type=int, default=10, help="minimum difference between melting temperature and hairpin melting temperature (default: %(default)s)")
+
+    # Other
+    parser.add_argument("--write-rejects", action="store_true", help="write rejected oligos to separate output file")
+
+    args = parser.parse_args()
+    print(args)
+
     starttime = process_time()
 
-    # Set up source and output files
-    usage = "Usage: python3 FilterOligos.py unfiltered.sam filtered.sam"
-
-    # Read arguments from Snakefile
-    try:
-        source = open(snakemake.input[0], 'r')
-        output = open(snakemake.output[0], 'w')
-        write_rejected = snakemake.params.write_rejected
-    # Or, read arguments from command line
-    except NameError:
-        try:
-            source = open(sys.argv[1], 'r')
-            output = open(sys.argv[2], 'w')
-        except IndexError:
-            exit(usage)
-        except FileNotFoundError as e:
-            exit("File " + e.filename + " not found.\n" + usage)
-
-    log = open(output.name.rsplit('.', 1)[0] + ".log", 'w')
+    if (args.output.name == "/dev/fd/1"):
+        log = open("/dev/null", 'w')
+    else:
+        log = open(args.output.name.rsplit('.', 1)[0] + ".log", 'w')
     log.write("Log file for FilterOligos.py")
-    log.write("\nInput file to filter: " + source.name)
-    log.write("\nFiltered output file: " + output.name)
+    log.write("\nInput file to filter: " + args.source.name)
+    log.write("\nFiltered args.output file: " + args.output.name)
 
-    print("Filtering oligos from " + source.name + " and writing to " + output.name)
+    print("Filtering oligos from " + args.source.name + " and writing to " + args.output.name)
 
-    # Default do not write rejects unless specified in Snakefile
-    try:
-        write_rejected = snakemake.params.write_rejected
-    except NameError:
-        write_rejected = False
-
-    if write_rejected:
-        rejects = open(output.name.rsplit('.', 1)[0] + "_bwa_rejects.sam", 'w'), \
-        open(output.name.rsplit('.', 1)[0] + "_primer3_rejects.sam", 'w')
+    if args.write_rejects:
+        rejects = open(args.output.name.rsplit('.', 1)[0] + "_bwa_rejects.sam", 'w'), \
+        open(args.output.name.rsplit('.', 1)[0] + "_primer3_rejects.sam", 'w')
         log.write("\nRejects written to: " + rejects[0].name + ", " + rejects[1].name)
         print("Writing rejects to " + rejects[0].name + ", " + rejects[1].name)
 
-    # Read parameters from Snakefile or use defaults
-    try:
-        min_AS = snakemake.params.bwa_min_AS
-        max_XS = snakemake.params.bwa_max_XS
-        min_TM = snakemake.params.primer3_min_TM
-        max_HTM = snakemake.params.primer3_max_HTM
-        min_diff_TM = snakemake.params.primer3_min_diff_TM
-        msg = "Filtering by custom parameters:"
-    except NameError:
-        min_AS = 45
-        max_XS = 31
-        min_TM = 37
-        max_HTM = 35
-        min_diff_TM = 10
-        msg = "Filtering by default parameters:"
-
     # Echo arguments
-    msg += "\nmin_AS = " + str(min_AS)
-    msg += "\nmax_XS = " + str(max_XS)
-    msg += "\nmin_TM = " + str(min_TM)
-    msg += "\nmax_HTM = " + str(max_HTM)
-    msg += "\nmin_diff_TM = " + str(min_diff_TM)
+    msg = "Filtering by parameters:"
+    msg += "\nmin_AS = " + str(args.min_AS)
+    msg += "\nmax_XS = " + str(args.max_XS)
+    msg += "\nmin_TM = " + str(args.min_TM)
+    msg += "\nmax_HTM = " + str(args.max_HTM)
+    msg += "\nmin_diff_TM = " + str(args.min_diff_TM)
 
     print(msg)
     log.write("\n" + msg)
 
     # Setup status messages
-    filelength = float(stat(source.name).st_size)
+    filelength = float(stat(args.source.name).st_size)
     percent = 10
 
     print("Filter beginning at " + ctime())
@@ -184,37 +171,37 @@ if __name__ == '__main__':
 
     # Loop through sam file
     while True:
-        line = source.readline()
+        line = args.source.readline()
         if not line: break
 
-        if (source.tell() / filelength * 100) >= percent:
+        if (args.source.tell() / filelength * 100) >= percent:
             print("Progress: " + str(percent) + "% (" + ctime() + ")")
             percent += 10
 
         # Output all headers
         if line[0] == '@':
-            output.write(line)
+            args.output.write(line)
             continue
 
         # Discard lines that fail BWA filter
-        elif bwa_filter(line, min_AS, max_XS):
-            if write_rejected:
+        elif bwa_filter(line, args.min_AS, args.max_XS):
+            if args.write_rejects:
                 rejects[0].write(line)
             continue
 
         # Discard lines that fail primer3 filter
-        elif primer3_filter(line, min_TM, max_HTM, min_diff_TM):
-            if write_rejected:
+        elif primer3_filter(line, args.min_TM, args.max_HTM, args.min_diff_TM):
+            if args.write_rejects:
                 rejects[1].write(line)
             continue
 
         # Write lines that pass both filters
         else:
-            output.write(line)
+            args.output.write(line)
 
 
     # Close file
-    source.close()
+    args.source.close()
 
     endtime = process_time()
     proc_time = endtime - starttime
@@ -223,5 +210,5 @@ if __name__ == '__main__':
     "\nRun time: " + str(timedelta(seconds=proc_time)) + " (total seconds: " + str(proc_time) + ")"
     log.write("\n" + msg)
     print(msg)
-    print("Filtered oligos written to " + output.name)
+    print("Filtered oligos written to " + args.output.name)
     print("Log written to " + log.name)
