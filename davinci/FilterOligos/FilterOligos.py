@@ -123,6 +123,7 @@ if __name__ == '__main__':
     parser.add_argument("--bwa-max-XS", dest="max_XS", type=int, default=31, help="maximum BWA suboptimal alignment score (default: %(default)s)")
 
     # Primer3 arguments
+    parser.add_argument("--enable-primer3-filter", action="store_true", help="enable filtering by primer3 criteria")
     parser.add_argument("--min-TM", type=int, default=37, help="minimum melting temperature (default: %(default)s)")
     parser.add_argument("--max-HTM", type=int, default=35, help="maximum hairpin melting temperature (default: %(default)s)")
     parser.add_argument("--min-diff-TM", type=int, default=10, help="minimum difference between melting temperature and hairpin melting temperature (default: %(default)s)")
@@ -189,8 +190,8 @@ if __name__ == '__main__':
                 rejects[0].write(line)
             continue
 
-        # Discard lines that fail primer3 filter
-        elif primer3_filter(line, args.min_TM, args.max_HTM, args.min_diff_TM):
+        # If primer3 filtering enabled, discard lines that fail primer3 filter
+        elif args.enable_primer3_filter and primer3_filter(line, args.min_TM, args.max_HTM, args.min_diff_TM):
             if args.write_rejects:
                 rejects[1].write(line)
             continue
