@@ -28,7 +28,7 @@ from datetime import timedelta
 import argparse
 
 # Filter out sequences with less than 70% homology
-def bwa_filter(line, min_AS=45, max_XS=31):
+def bwa_filter(line, min_AS, max_XS):
     """
     :param line: line of sam file
     :param min_AS: minimum alignment score (sam tag AS:i:), ideally probe length
@@ -76,7 +76,7 @@ def bwa_filter(line, min_AS=45, max_XS=31):
         return False
 
 # Filter out oligos that would behave unexpectedly as probes
-def primer3_filter(line, min_TM=37, max_HTM=35, min_diff_TM=10):
+def primer3_filter(line, min_TM, max_HTM, min_diff_TM):
     """
     :param sequence: sequence of oligo
     :param min_TM: minimum melting temp, default 37
