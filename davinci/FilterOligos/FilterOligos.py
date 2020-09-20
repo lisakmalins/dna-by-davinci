@@ -28,14 +28,8 @@ from datetime import timedelta
 import argparse
 
 # Filter out sequences with less than 70% homology
+# Returns true to discard oligo; returns false to keep
 def bwa_filter(line, min_AS, max_XS):
-    """
-    :param line: line of sam file
-    :param min_AS: minimum alignment score (sam tag AS:i:), ideally probe length
-    :param max_XS: maximum suboptimal alignment score (sam tag XS:i), ideally probe length * homology
-    :return: true to filter out line, false to keep
-    """
-
     fields = line.split('\t')
 
     # AS and XS usually last two fields but not always
@@ -76,15 +70,8 @@ def bwa_filter(line, min_AS, max_XS):
         return False
 
 # Filter out oligos that would behave unexpectedly as probes
+# Returns true to discard oligo; returns false to keep
 def primer3_filter(line, min_TM, max_HTM, min_diff_TM):
-    """
-    :param sequence: sequence of oligo
-    :param min_TM: minimum melting temp, default 37
-    :param max_HTM: maximum hairpin melting temp, default 35
-    :param min_diff_TM: minimum difference between melting temp and hairpin melting temp, default 10
-    :return: true to filter out line, false to keep
-    """
-
     # Get sequence from line passed to function
     sequence = line.split('\t')[9]
 
@@ -115,12 +102,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Filter oligos from SAM file based on BWA mapping statistics.\n")
 
     # I/O
-    parser.add_argument("-i", "--in", dest="source", type=argparse.FileType('r'), help="input SAM filename", required=True)
+    parser.add_argument("-i", "--in", dest="source", metavar="INPUT", type=argparse.FileType('r'), help="input SAM filename", required=True)
     parser.add_argument("-o", "--output", type=argparse.FileType('w'), default="/dev/fd/1", help="args.output filename (default: standard out)")
 
     # BWA filtering
-    parser.add_argument("--bwa-min-AS", dest="min_AS", type=int, default=45, help="minimum BWA alignment score (default: %(default)s)")
-    parser.add_argument("--bwa-max-XS", dest="max_XS", type=int, default=31, help="maximum BWA suboptimal alignment score (default: %(default)s)")
+    parser.add_argument("--bwa-min-AS", dest="min_AS", type=int, default=45, help="minimum BWA alignment score (AS:i:) required to keep oligo; suggested same as probe length (default: %(default)s)")
+    parser.add_argument("--bwa-max-XS", dest="max_XS", type=int, default=31, help="maximum BWA suboptimal alignment score (XS:i:) required to keep oligo; suggested probe length * 70%% (default: %(default)s)")
 
     # Primer3 arguments
     parser.add_argument("--enable-primer3-filter", action="store_true", help="enable filtering by primer3 criteria")
