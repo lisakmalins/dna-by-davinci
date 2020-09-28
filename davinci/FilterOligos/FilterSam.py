@@ -1,16 +1,16 @@
 # 6 May 2019
 # Lisa Malins
-# FilterOligos.py
+# FilterSam.py
 
 """
 Python program to filter hybridization oligos using bwa and primer3.
 Based on bwa.py and primer3_filter.py from Chorus2 by zhangtaolab on GitHub.
 
 Example command:
-python FilterOligos.py -i unfiltered.sam -o filtered.sam
+python FilterSam.py -i unfiltered.sam -o filtered.sam
 
 For full usage info, please see:
-python FilterOligos.py --help
+python FilterSam.py --help
 """
 
 import sys
@@ -127,7 +127,7 @@ if __name__ == '__main__':
         log = open("/dev/null", 'w')
     else:
         log = open(args.output.name.rsplit('.', 1)[0] + ".log", 'w')
-    log.write("Log file for FilterOligos.py")
+    log.write("Log file for FilterSam.py")
     log.write("\nInput file to filter: " + args.source.name)
     log.write("\nFiltered args.output file: " + args.output.name)
 
