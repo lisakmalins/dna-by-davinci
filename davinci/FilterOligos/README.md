@@ -15,7 +15,3 @@ Example command:
 ```
 python FilterOligos.py unfiltered.sam filtered.sam
 ```
-
-
-## CheckForRepeats.py
-Quick-and-dirty script to check for repeats in sam file (dupicate mappings).
