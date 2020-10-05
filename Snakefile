@@ -359,6 +359,9 @@ rule get_oligos:
         "data/oligos/{genome}_{o}mers_{chr}.fasta"
     log:
         "data/oligos/{genome}_{o}mers_{chr}.log"
+    # Fix ambiguous wildcard by prohibiting {chr} to end with 'filtered'
+    wildcard_constraints:
+        chr=".*(?<!filtered)"
     params:
         oligo_size=config["oligo_size"],
         step_size=config["step_size"]
@@ -366,6 +369,21 @@ rule get_oligos:
         "python davinci/GetOligos/GetOligos.py -g {input} \
         -m {params.oligo_size} -s {params.step_size} -o {output} -l {log}\
         --sequences {wildcards.chr}"
+
+rule primer3_homopolymer_filter:
+    input:
+        "data/oligos/{genome}_{o}mers_{chr}.fasta"
+    output:
+        "data/oligos/{genome}_{o}mers_{chr}_filtered.fasta"
+    params:
+        min_tm=37,
+        max_htm=35,
+        min_dtm=10,
+        max_homopolymer=5
+    shell:
+        "python davinci/FilterOligos/FilterFasta.py -i {input} -o {output} \
+        --min-tm {params.min_tm} --max-htm {params.max_htm} --min-dtm {params.min_dtm} \
+        --homopolymer-length {params.max_homopolymer}"
 
 rule bwa_index:
     input:
@@ -387,7 +405,7 @@ rule map_oligos:
         "data/genome/{{genome}}.{}.pac".format(FASTA_EXT),
         "data/genome/{{genome}}.{}.sa".format(FASTA_EXT),
         genome="data/genome/{{genome}}.{}".format(FASTA_EXT),
-        oligos="data/oligos/{genome}_{o}mers_{chr}.fasta"
+        oligos="data/oligos/{genome}_{o}mers_{chr}_filtered.fasta"
     output:
         "data/maps/split/{genome}_{o}mers_unfiltered_{chr}.sam"
     threads:
@@ -395,20 +413,17 @@ rule map_oligos:
     shell:
         "bwa mem -t {threads} {input.genome} {input.oligos} > {output}"
 
-rule filter_oligos:
+rule filter_bwa:
     input:
         "data/maps/split/{genome}_{o}mers_unfiltered_{chr}.sam"
     output:
         "data/maps/split/{genome}_{o}mers_filtered_{chr}.sam"
     params:
         bwa_min_AS=45,
-        bwa_max_XS=31,
-        primer3_min_TM=37,
-        primer3_max_HTM=35,
-        primer3_min_diff_TM=10,
-        write_rejected=False
-    script:
-        "davinci/FilterOligos/FilterOligos.py"
+        bwa_max_XS=31
+    shell:
+        "python davinci/FilterOligos/FilterSam.py -i {input} -o {output} \
+        --bwa-min-AS {params.bwa_min_AS} --bwa-min-XS {params.bwa_max_XS}"
 
 rule merge_filtered:
     input:
