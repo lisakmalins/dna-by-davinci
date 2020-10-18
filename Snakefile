@@ -337,7 +337,10 @@ rule download_genome:
         url=config["genome_download"]
     shell:
         """
-        wget {params.url}
+        # Download genome from url and save to desired filename
+        wget {params.url} --output-document {output}
+        # If genome is gzipped; move to extension .gz and then unzip it
+        if $(gzip -tq {output}); then mv {output} {output}.gz && gunzip {output}.gz; fi
         """
 #TODO check if downloaded genome is gzipped
 ###--------- Slice genome into overlapping oligos, map, and filter ----------###
