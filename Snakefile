@@ -40,8 +40,8 @@ wildcard_constraints:
     # Override snakemake default: p can be empty string
     p=".*"
 
-# Prefer quick_fastq_dump if sra file is prefetched, but do regular fastq_dump otherwise
-ruleorder: quick_fastq_dump > fastq_dump
+# Prefer prefetched_fastq_dump if sra file is prefetched, but do regular fastq_dump otherwise
+ruleorder: prefetched_fastq_dump > fastq_dump
 
 # Slow version sans prefetch
 rule fastq_dump:
@@ -53,7 +53,7 @@ rule fastq_dump:
         --split-spot --clip {wildcards.read}"
 
 # Fast version if sra file is prefetched
-rule quick_fastq_dump:
+rule prefetched_fastq_dump:
     input:
         "data/reads/{read}.sra"
     output:
