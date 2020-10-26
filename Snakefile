@@ -47,10 +47,13 @@ ruleorder: prefetched_fastq_dump > fastq_dump
 rule fastq_dump:
     output:
         "data/reads/{read}.fastq.gz"
-    shell:
-        "fastq-dump --outdir data/reads --gzip \
-        --skip-technical --readids --read-filter pass --dumpbase \
-        --split-spot --clip {wildcards.read}"
+    shell:"""
+        fastq-dump --outdir data/reads --gzip \\
+        --skip-technical --readids --read-filter pass --dumpbase \\
+        --split-spot --clip {wildcards.read}
+        # Remove `_pass` from the filename
+        mv data/reads/{wildcards.read}_pass.fastq.gz data/reads/{wildcards.read}.fastq.gz
+        """
 
 # Fast version if sra file is prefetched
 rule prefetched_fastq_dump:
@@ -58,10 +61,13 @@ rule prefetched_fastq_dump:
         "data/reads/{read}.sra"
     output:
         "data/reads/{read}.fastq.gz"
-    shell:
-        "fastq-dump --outdir data/reads --gzip \
-        --skip-technical --readids --read-filter pass --dumpbase \
-        --split-spot --clip {input}"
+    shell:"""
+        fastq-dump --outdir data/reads --gzip \\
+        --skip-technical --readids --read-filter pass --dumpbase \\
+        --split-spot --clip {input}
+        # Remove `_pass` from the filename
+        mv data/reads/{wildcards.read}_pass.fastq.gz data/reads/{wildcards.read}.fastq.gz
+        """
 
 ###------------------- Estimate coverage --------------------###
 
