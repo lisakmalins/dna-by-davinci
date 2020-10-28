@@ -41,33 +41,41 @@ wildcard_constraints:
     p=".*"
 
 # Prefer prefetched_fastq_dump if sra file is prefetched, but do regular fastq_dump otherwise
-ruleorder: prefetched_fastq_dump > fastq_dump
+ruleorder: parallel_prefetched_fastq_dump > parallel_fastq_dump
 
 # Slow version sans prefetch
-rule fastq_dump:
+rule parallel_fastq_dump:
     output:
         "data/reads/{read}.fastq.gz"
+    params:
+        # Alternative temporary directory
+        tmpdir="data/reads/tmp/",
+        # Native fastq-dump options
+        options="--outdir data/reads --gzip --skip-technical --readids --read-filter pass --dumpbase --split-spot --clip"
+    threads:
+        4
     shell:"""
-        fastq-dump --outdir data/reads --gzip \\
-        --skip-technical --readids --read-filter pass --dumpbase \\
-        --split-spot --clip {wildcards.read}
+        mkdir -p {params.tmpdir}
+        parallel-fastq-dump --sra-id {wildcards.read} -t {threads} --tmpdir {params.tmpdir} {params.options}
         # Remove `_pass` from the filename
         mv data/reads/{wildcards.read}_pass.fastq.gz data/reads/{wildcards.read}.fastq.gz
         """
 
 # Fast version if sra file is prefetched
-rule prefetched_fastq_dump:
+rule parallel_prefetched_fastq_dump:
     input:
         "data/reads/{read}.sra"
     output:
         "data/reads/{read}.fastq.gz"
-    shell:"""
-        fastq-dump --outdir data/reads --gzip \\
-        --skip-technical --readids --read-filter pass --dumpbase \\
-        --split-spot --clip {input}
-        # Remove `_pass` from the filename
-        mv data/reads/{wildcards.read}_pass.fastq.gz data/reads/{wildcards.read}.fastq.gz
-        """
+    params:
+        # Alternative temporary directory
+        tmpdir="data/reads/tmp/",
+        # Native fastq-dump options
+        options="--outdir data/reads --gzip --skip-technical --readids --read-filter pass --dumpbase --split-spot --clip"
+    threads:
+        4
+    shell:
+        "parallel-fastq-dump --sra-id {input} -t {threads} --tmpdir {params.tmpdir} {params.options}"
 
 ###------------------- Estimate coverage --------------------###
 
