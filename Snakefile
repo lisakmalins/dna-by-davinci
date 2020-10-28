@@ -53,7 +53,7 @@ rule parallel_fastq_dump:
         # Native fastq-dump options
         options="--outdir data/reads --gzip --skip-technical --readids --read-filter pass --dumpbase --split-spot --clip"
     threads:
-        4
+        config["fastq_dump"]["threads"]
     shell:"""
         mkdir -p {params.tmpdir}
         parallel-fastq-dump --sra-id {wildcards.read} -t {threads} --tmpdir {params.tmpdir} {params.options}
@@ -73,7 +73,7 @@ rule parallel_prefetched_fastq_dump:
         # Native fastq-dump options
         options="--outdir data/reads --gzip --skip-technical --readids --read-filter pass --dumpbase --split-spot --clip"
     threads:
-        4
+        config["fastq_dump"]["threads"]
     shell:
         "parallel-fastq-dump --sra-id {input} -t {threads} --tmpdir {params.tmpdir} {params.options}"
 

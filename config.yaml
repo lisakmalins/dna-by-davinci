@@ -34,6 +34,9 @@ sequences:
 bed_regions:
   - example.bed
 
+fastq_dump:
+  # Number of threads to use for dumping fastq from SRA
+  threads: 4
 subsampling:
   # Number of threads to use for checking coverage and subsampling if necessary
   threads: 20
