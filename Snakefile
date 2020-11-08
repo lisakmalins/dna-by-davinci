@@ -295,7 +295,7 @@ rule jellyfish_histo:
 # these functions will use a prefix to request jellyfish on subsampled reads.
 # If coverage is manageable, they will request jellyfish on the original reads.
 def prefix():
-    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[1]) as f:
+    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[0]) as f:
         if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
             return "{}seed_{}sub".format(
                     config["subsampling"]["seed"],
