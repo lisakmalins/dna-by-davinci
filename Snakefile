@@ -87,12 +87,10 @@ rule estimate_bases:
     input:
         "data/reads/{read}.fastq"
     output:
-        "data/reads/{read}_readlength.txt",
-        "data/reads/{read}_numlines.txt"
+        "data/reads/{read}_numbases.txt"
     shell: """
-        echo "Estimating read length"
-        head -n 1000 {input} | paste - - - - | cut -f 2 | wc -L > {output[0]}
-        wc -l < {input} > {output[1]}
+        echo "Estimating number of bases in {input}"
+        cat {input} | paste - - - - | cut -f 2 | wc -c > {output}
    """
 
 # Estimate number of bases in gzipped fastq reads.
@@ -101,38 +99,27 @@ rule estimate_bases_gz:
     input:
         "data/reads/{read}.fastq.gz"
     output:
-        "data/reads/{read}_readlength.txt",
-        "data/reads/{read}_numlines.txt"
+        "data/reads/{read}_numbases.txt"
     threads:
         config["subsampling"]["threads"]
     shell: """
-        echo "Estimating read length"
-        gunzip -c {input} | head -n 1000 | paste - - - - | cut -f 2 | wc -L > {output[0]}
-        unpigz -p {threads} -c {input} | wc -l > {output[1]}
+        echo "Estimating number of bases in {input}"
+        unpigz -p {threads} -c {input} | paste - - - - | cut -f 2 | wc -c > {output}
     """
 
 checkpoint estimate_coverage:
     input:
-        "data/reads/{read}_readlength.txt",
-        "data/reads/{read}_numlines.txt"
+        "data/reads/{read}_numbases.txt"
     output:
-        "data/reads/{read}_numbases.txt",
         "data/reads/{read}_approx_coverage.txt"
     run:
-        # Load read length and number of lines in fastq from last step
+        # Load number of bases in fastq from last step
         with open(input[0], 'r') as infile:
-            readlength = int(infile.read().strip())
-        with open(input[1], 'r') as infile:
-            numlines = int(infile.read().strip())
-
-        # Approximate number of bases by typical length * number of reads
-        numbases = readlength * numlines / 4
-        with open(output[0], 'w') as out:
-            out.write(str(round(numbases)) + "\n")
+            numbases = int(infile.read().strip())
 
         # Approximate coverage by number of bases / genome size
         approx_coverage = numbases / config["genome_size"]
-        with open(output[1], 'w') as out:
+        with open(output[0], 'w') as out:
             out.write(str(round(approx_coverage)) + "\n")
 
 
