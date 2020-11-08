@@ -90,7 +90,7 @@ rule estimate_bases:
         "data/reads/{read}_numbases.txt"
     shell: """
         echo "Estimating number of bases in {input}"
-        cat {input} | paste - - - - | cut -f 2 | tr -d '\\n' | wc -c > {output}
+        cat {input} | paste - - - - | cut -f2 | tr -d '\\n' | wc -c | xargs echo > {output}
    """
 
 # Estimate number of bases in gzipped fastq reads.
@@ -104,7 +104,7 @@ rule estimate_bases_gz:
         config["subsampling"]["threads"]
     shell: """
         echo "Estimating number of bases in {input}"
-        unpigz -p {threads} -c {input} | paste - - - - | cut -f 2 | tr -d '\\n' | wc -c > {output}
+        unpigz -p {threads} -c {input} | paste - - - - | cut -f2 | tr -d '\\n' | wc -c | xargs echo > {output}
     """
 
 checkpoint estimate_coverage:
