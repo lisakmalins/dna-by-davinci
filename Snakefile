@@ -232,8 +232,8 @@ def expected_kmers(wildcards=False):
 
     return str(exp_kmers)
 
-# Print calculated hash size by running `snakemake print_hash`
-rule print_hash:
+# Print calculated hash size by running `snakemake print_hash_size`
+rule print_hash_size:
     run:
         print(expected_kmers())
 
