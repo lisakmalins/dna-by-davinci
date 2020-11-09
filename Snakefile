@@ -37,8 +37,9 @@ rule targets:
 
 wildcard_constraints:
     read=config["reads"],
-    # Override snakemake default: p can be empty string
-    p=".*"
+    # Allow p to match the subsampled prefix pattern used in this workflow
+    # or match an empty string if subsampling is unnecessary
+    p="(\d+[a-z]+_\d+[a-z]+_)?"
 
 # Prefer prefetched_fastq_dump if sra file is prefetched, but do regular fastq_dump otherwise
 ruleorder: parallel_prefetched_fastq_dump > parallel_fastq_dump
