@@ -296,10 +296,14 @@ rule jellyfish_histo:
 # If coverage is manageable, they will request jellyfish on the original reads.
 def prefix():
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[0]) as f:
+        # If read coverage is greater than the maximum specified in the config,
+        # return a prefix specifying the seed and fraction for subsampling.
         if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
-            return "{}seed_{}sub".format(
-                    config["subsampling"]["seed"],
-                    config["subsampling"]["max_coverage"])
+            return "{sub}sub_{seed}seed_".format(
+                    sub=config["subsampling"]["max_coverage"],
+                    seed=config["subsampling"]["seed"])
+        # If read coverage is within limits, return empty string
+        # to allow jellyfish to run on original reads.
         else:
             return ""
 
