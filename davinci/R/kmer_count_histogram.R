@@ -22,15 +22,22 @@ kmers <- read_delim(source,
 # Find peak
 # Ignore left tail
 kmers_abridged <- kmers %>% slice(-1:-10)
+# Store y-value of peak (greatest number of k-mers per abundance)
+peak_y <- max(kmers_abridged$number)
 # Store x-value of peak (abundance with greatest number of k-mers)
 peak_x <- kmers_abridged[[which.max(kmers_abridged$number), "abundance"]]
+print(paste("Peak detected at abundance", peak_x,
+            "with", peak_y, "k-mers"))
+
+# Y-axis cutoff will be 110% of y_peak
+y_cutoff <- round(peak_y * 1.1)
 
 # Plot
 ggplot(filter(kmers, abundance >= 4), aes(x = abundance, y = number)) +
   geom_histogram(binwidth = 1, stat = "identity") +
   scale_x_continuous(limits = c(0, 150),
                      breaks = c(peak_x, 0, 50, 100, 150)) +
-  scale_y_continuous(limits = c(0, 2e7)) +
+  scale_y_continuous(limits = c(0, y_cutoff)) +
   geom_vline(xintercept = peak_x) +
   labs(title = "Number of K-mers by Abundance",
        x = "K-mer abundance in reads",
