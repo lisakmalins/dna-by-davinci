@@ -43,17 +43,19 @@ x_cutoff <- min(which(kmers$cum_fraction > 0.997))
 y_cutoff <- round(peak_y * 1.1)
 
 # Plot
-ggplot(filter(kmers, abundance >= 4), aes(x = abundance, y = number)) +
+ggplot(kmers, aes(x = abundance, y = number)) +
   geom_histogram(binwidth = 1, stat = "identity") +
-  scale_x_continuous(limits = c(0, x_cutoff),
-                     breaks = c(seq(from=0, to=x_cutoff, by=10),
+  # Zoom x- and y- axes without clipping
+  coord_cartesian(xlim = c(0, x_cutoff),
+                  ylim = c(0, y_cutoff)) +
+  # Add x ticks/labels by 10, plus an extra for the peak
+  scale_x_continuous(breaks = c(seq(from=0, to=x_cutoff, by=10),
                                 peak_x)) +
-  scale_y_continuous(limits = c(0, y_cutoff)) +
+  # Add vertical line for peak
   geom_vline(xintercept = peak_x) +
   labs(title = "Number of K-mers by Abundance",
        x = "K-mer abundance in reads",
        y = "Number of distinct k-mers")
-
 
 # Save
 ggsave(output, plot = last_plot())
