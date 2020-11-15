@@ -39,7 +39,7 @@ wildcard_constraints:
     read=config["reads"],
     # Allow p to match the subsampled prefix pattern used in this workflow
     # or match an empty string if subsampling is unnecessary
-    p="(\d+[a-z]+_\d+[a-z]+_)?"
+    p="(\d+x_)?"
 
 # Prefer prefetched_fastq_dump if sra file is prefetched, but do regular fastq_dump otherwise
 ruleorder: parallel_prefetched_fastq_dump > parallel_fastq_dump
@@ -162,6 +162,19 @@ rule uninterleave_gz:
             | cut -f 5-8 | tr '\t' '\n' | pigz -p {threads} > {output[1]}
         """
 
+def calculate_subsample_fraction(wildcards):
+    with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[0]) as f:
+        # Obtain estimated coverage from file generated at checkpoint
+        original_coverage = int(f.read().strip())
+        # Obtain desired coverage from wildcard
+        desired_coverage = int(wildcards.cov)
+
+        assert original_coverage > desired_coverage, \
+            "If you are seing this message, calculate_subsample_fraction() was called unnecessarily."
+
+        # Calculate subsampling fraction from desired / original coverage
+        return round(desired_coverage / original_coverage, 2)
+
 # Subsample gzipped reads to a lower coverage, then gzip
 rule subsample:
     input:
@@ -169,16 +182,21 @@ rule subsample:
     wildcard_constraints:
         n="1|2"
     params:
+        # Get seed from config
         seed=config["subsampling"]["seed"],
-        coverage=float(config["subsampling"]["max_coverage"]) / 100
+        # Calculate subsampling fraction from desired / original coverage
+        subsampling_fraction=calculate_subsample_fraction
     output:
-        temp("data/reads/{p}{read}-{n}.fastq.gz")
+        temp("data/reads/{cov}x_{read}-{n}.fastq.gz")
+    log:
+        "data/reads/{cov}x_{read}-{n}_subsampling.log"
     threads:
         config["subsampling"]["threads"]
     shell:
         """
+        echo -e "{input} subsampled with seed {params.seed} and fraction {params.subsampling_fraction} to obtain {wildcards.cov}x coverage\\n$(date)" > {log}
         unpigz -p {threads} -c {input} | \
-        seqtk sample -s{params.seed} /dev/fd/0 {params.coverage} | \
+        seqtk sample -s{params.seed} /dev/fd/0 {params.subsampling_fraction} | \
         pigz -p {threads} > {output}
         """
 
@@ -297,12 +315,12 @@ rule jellyfish_histo:
 # If coverage is manageable, they will request jellyfish on the original reads.
 def prefix():
     with open(checkpoints.estimate_coverage.get(read=config["reads"]).output[0]) as f:
+        original_coverage = int(f.read().strip())
+        max_coverage = int(config["subsampling"]["max_coverage"])
         # If read coverage is greater than the maximum specified in the config,
-        # return a prefix specifying the seed and fraction for subsampling.
-        if int(f.read().strip()) > int(config["subsampling"]["max_coverage"]):
-            return "{sub}sub_{seed}seed_".format(
-                    sub=config["subsampling"]["max_coverage"],
-                    seed=config["subsampling"]["seed"])
+        # return a prefix specifying the desired coverage.
+        if original_coverage > max_coverage:
+            return "{}x_".format(max_coverage)
         # If read coverage is within limits, return empty string
         # to allow jellyfish to run on original reads.
         else:
