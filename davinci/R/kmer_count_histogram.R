@@ -20,19 +20,22 @@ kmers <- read_delim(source,
                     col_types = 'ii')
 
 # Find peak
+# Ignore left tail
 kmers_abridged <- kmers %>% slice(-1:-10)
-peak <- kmers_abridged[which.max(kmers_abridged$number), 1] %>% as.numeric()
+# Store x-value of peak (abundance with greatest number of k-mers)
+peak_x <- kmers_abridged[[which.max(kmers_abridged$number), "abundance"]]
 
 # Plot
 ggplot(filter(kmers, abundance >= 4), aes(x = abundance, y = number)) +
   geom_histogram(binwidth = 1, stat = "identity") +
   scale_x_continuous(limits = c(0, 150),
-                     breaks = c(peak, 0, 50, 100, 150)) +
+                     breaks = c(peak_x, 0, 50, 100, 150)) +
   scale_y_continuous(limits = c(0, 2e7)) +
+  geom_vline(xintercept = peak_x) +
   labs(title = "Number of K-mers by Abundance",
        x = "K-mer abundance in reads",
-       y = "Number of distinct k-mers") +
-  geom_vline(xintercept = peak)
+       y = "Number of distinct k-mers")
+
 
 # Save
 ggsave(output, plot = last_plot())
