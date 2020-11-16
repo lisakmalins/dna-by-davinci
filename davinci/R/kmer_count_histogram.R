@@ -36,9 +36,12 @@ peak_x <- kmers_abridged[[which.max(kmers_abridged$number), "abundance"]]
 print(paste("Peak detected at abundance", peak_x,
             "with", peak_y, "k-mers"))
 
-# X-axis cutoff at 0.997 cumulative fraction
-# Fixes x-axis stretched by tiny number of high-abundance k-mers
-x_cutoff <- min(which(kmers$cum_fraction > 0.997))
+# Fix x-axis stretched by tiny number of high-abundance k-mers
+# Set x-axis cutoff at 0.997 cumulative fraction
+# or 150, whichever is smaller
+x_cutoff <-
+  min(which(kmers$cum_fraction > 0.997)) %>%
+  min(150)
 # Y-axis cutoff will be 110% of y_peak
 y_cutoff <- round(peak_y * 1.1)
 
