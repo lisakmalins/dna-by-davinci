@@ -29,12 +29,13 @@ kmers <- kmers %>%
 # Find peak
 # Ignore left tail
 kmers_abridged <- kmers %>% slice(-1:-10)
-# Store y-value of peak (greatest number of k-mers per abundance)
-peak_y <- max(kmers_abridged$number)
 # Store x-value of peak (abundance with greatest number of k-mers)
-peak_x <- kmers_abridged[[which.max(kmers_abridged$number), "abundance"]]
-print(paste("Peak detected at abundance", peak_x,
-            "with", peak_y, "k-mers"))
+# Store y-value of peak (greatest number of k-mers per abundance)
+peak <-
+  list(x=kmers_abridged[[which.max(kmers_abridged$number), "abundance"]],
+       y=max(kmers_abridged$number))
+print(paste("Peak detected at abundance", peak$x,
+            "with", peak$y, "k-mers"))
 
 # Fix x-axis stretched by tiny number of high-abundance k-mers
 # Set x-axis cutoff at 0.997 cumulative fraction
@@ -43,7 +44,7 @@ x_cutoff <-
   min(which(kmers$cum_fraction > 0.997)) %>%
   min(150)
 # Y-axis cutoff will be 110% of y_peak
-y_cutoff <- round(peak_y * 1.1)
+y_cutoff <- round(peak$y * 1.1)
 
 # Plot
 ggplot(kmers, aes(x = abundance, y = number)) +
@@ -53,9 +54,9 @@ ggplot(kmers, aes(x = abundance, y = number)) +
                   ylim = c(0, y_cutoff)) +
   # Add x ticks/labels by 10, plus an extra for the peak
   scale_x_continuous(breaks = c(seq(from=0, to=x_cutoff, by=10),
-                                peak_x)) +
+                                peak$x)) +
   # Add vertical line for peak
-  geom_vline(xintercept = peak_x) +
+  geom_vline(xintercept = peak$x) +
   labs(title = "Number of K-mers by Abundance",
        x = "K-mer abundance in reads",
        y = "Number of distinct k-mers")
