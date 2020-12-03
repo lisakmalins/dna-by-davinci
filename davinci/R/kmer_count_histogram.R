@@ -26,10 +26,29 @@ kmers <- kmers %>%
   # Cumulative fraction of number column
   mutate(cum_fraction = cum_sum / sum(number))
 
+# Approximate first derivative
+kmers <- kmers %>%
+  mutate(slope=c(NA, diff(number)))
+
+# Find slope global maximum.
+# Should be located at inflection point on left side of main k-mer peak
+slope_global_max <- kmers %>%
+  slice(which.max(kmers$slope)) %>%
+  transmute(x=abundance, y=slope) %>%
+  as.list()
+
+print(paste("Slope global maximum detected at x-coordinate",
+            slope_global_max$x))
+print(paste("Searching for most frequent k-mer abundance,",
+            "excluding abundances",
+            slope_global_max$x,
+            "and below"))
+
 # Find peak
 peak <- kmers %>%
-  # Ignore left tail
-  slice(-c(1:10)) %>%
+  # Ignore abundances to left of slope global maximum
+  # (should be inflection point on left slope of hill)
+  filter(abundance > slope_global_max$x) %>%
   # Grab the row with the highest number
   filter(number == max(number)) %>%
   # Should be only one, but just in case
