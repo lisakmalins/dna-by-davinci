@@ -27,13 +27,17 @@ kmers <- kmers %>%
   mutate(cum_fraction = cum_sum / sum(number))
 
 # Find peak
-# Ignore left tail
-kmers_abridged <- kmers %>% slice(-1:-10)
-# Store x-value of peak (abundance with greatest number of k-mers)
-# Store y-value of peak (greatest number of k-mers per abundance)
-peak <-
-  list(x=kmers_abridged[[which.max(kmers_abridged$number), "abundance"]],
-       y=max(kmers_abridged$number))
+peak <- kmers %>%
+  # Ignore left tail
+  slice(-c(1:10)) %>%
+  # Grab the row with the highest number
+  filter(number == max(number)) %>%
+  # Should be only one, but just in case
+  slice(1) %>%
+  # Store x and y coordinates
+  transmute(x=abundance, y=number) %>%
+  as.list()
+
 print(paste("Peak detected at abundance", peak$x,
             "with", peak$y, "k-mers"))
 
