@@ -33,7 +33,10 @@ kmers <- kmers %>%
 # Find slope global maximum.
 # Should be located at inflection point on left side of main k-mer peak
 slope_global_max <- kmers %>%
-  slice(which.max(kmers$slope)) %>%
+  # Exclude last row of histogram,
+  #   which is a "catchall" for super-duper high abundance k-mers
+  # If there are lots, the slope will spike on the very last row
+  slice(kmers %>% head(n=-1) %>% pull(slope) %>% which.max()) %>%
   transmute(x=abundance, y=slope) %>%
   as.list()
 
