@@ -119,7 +119,6 @@ if __name__ == '__main__':
     parser.add_argument("--write-rejects", action="store_true", help="write rejected oligos to separate output file")
 
     args = parser.parse_args()
-    print(args)
 
     starttime = process_time()
 
