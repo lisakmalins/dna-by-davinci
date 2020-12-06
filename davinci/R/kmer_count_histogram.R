@@ -74,7 +74,8 @@ y_cutoff <- round(peak$y * 1.1)
 
 # Plot
 ggplot(kmers, aes(x = abundance, y = number)) +
-  geom_histogram(binwidth = 1, stat = "identity") +
+  # Use geom_col() because histogram is pre-calculated
+  geom_col() +
   # Zoom x- and y- axes without clipping
   coord_cartesian(xlim = c(0, x_cutoff),
                   ylim = c(0, y_cutoff)) +
