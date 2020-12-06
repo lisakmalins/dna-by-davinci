@@ -450,7 +450,7 @@ rule filter_bwa:
         bwa_max_XS=31
     shell:
         "python davinci/FilterOligos/FilterSam.py -i {input} -o {output} \
-        --bwa-min-AS {params.bwa_min_AS} --bwa-min-XS {params.bwa_max_XS}"
+        --bwa-min-AS {params.bwa_min_AS} --bwa-max-XS {params.bwa_max_XS}"
 
 rule merge_filtered:
     input:
