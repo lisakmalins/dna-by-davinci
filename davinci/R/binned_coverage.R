@@ -20,7 +20,7 @@ coverage <- read_delim(source, delim="\t", col_names=F, col_types=cols(X1 = col_
 
 # Plot for all chromosmoes with facet wrap
 ggplot(coverage, aes(x=pos, y=feat_overlap)) +
-  geom_histogram(binwidth = 1, stat = "identity") +
+  geom_col() +
   labs(x = "Position on chromosome (MB)", y = "Probe Count", title = "Probe Coverage by Chromosome") +
   facet_wrap(vars(chr), ncol = 2, strip.position = "r")
 
