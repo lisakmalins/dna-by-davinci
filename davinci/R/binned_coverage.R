@@ -1,8 +1,8 @@
 # Usage: Rscript binned_coverage.R {input.bed} {output.ext}
 
-library(dplyr)
-library(ggplot2)
-library(readr)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(readr))
 
 args <- commandArgs(trailingOnly = TRUE)
 source = args[1]
