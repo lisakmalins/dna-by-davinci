@@ -1,8 +1,8 @@
 # Usage: Rscript kmer_score_histogram.R {input.txt} {output.ext}
 
-library(dplyr)
-library(ggplot2)
-library(readr)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(readr))
 
 args <- commandArgs(trailingOnly = TRUE)
 source = args[1]
