@@ -559,7 +559,7 @@ rule binned_counts:
         probes="data/probes/{genome}_{o}mers_probes_selected.sam",
         bins="data/coverage/{{genome}}_{{o}}mers_{binsize}_bins.bed".format(binsize=config["binsize"])
     output:
-        "data/coverage/{genome}_{o}mers_probes_coverage.bed"
+        "data/coverage/{genome}_{o}mers_{binsize}_binned_coverage.bed"
     shell:
         "bash davinci/BinnedCounts/binned_read_counts.sh {input.probes} {input.bins} {output}"
 
@@ -568,9 +568,9 @@ rule binned_counts:
 
 rule binned_count_plot:
     input:
-        "data/coverage/{genome}_{o}mers_probes_coverage.bed"
+        "data/coverage/{genome}_{o}mers_{binsize}_binned_coverage.bed"
     output:
-        "data/plots/{genome}_{o}mers_probes_coverage.{ext}"
+        "data/plots/{genome}_{o}mers_{binsize}_binned_coverage.{ext}"
     shell:
         "Rscript davinci/R/binned_coverage.R {input} {output}"
 
@@ -595,8 +595,8 @@ rule kmer_score_plot:
 rule plots_done:
     input:
         # Binned coverage plot
-        expand("data/plots/{genome}_{o}mers_probes_coverage.{ext}", \
-        genome=GENOME, o=config["oligo_size"], ext = ["png", "pdf"]),
+        expand("data/plots/{genome}_{o}mers_{binsize}_binned_coverage.{ext}", \
+        genome=GENOME, o=config["oligo_size"], binsize=config["binsize"], ext = ["png", "pdf"]),
 
         # K-mer count histogram plot
         get_jelly_histo_plots,
