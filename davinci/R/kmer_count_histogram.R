@@ -15,20 +15,9 @@ print(paste("Saving k-mer count plot to", output))
 
 # Read in data
 kmers <- read_delim(source,
-                    delim = " ",
-                    col_names = c("abundance", "number"),
-                    col_types = 'ii')
-
-# Add columns for cumulative sum and cumulative percent
-kmers <- kmers %>%
-  # Cumulative sum of number column
-  mutate(cum_sum = cumsum(number)) %>%
-  # Cumulative fraction of number column
-  mutate(cum_fraction = cum_sum / sum(number))
-
-# Approximate first derivative
-kmers <- kmers %>%
-  mutate(slope=c(NA, diff(number)))
+                    delim = "\t",
+                    col_names = TRUE,
+                    col_types = 'iiidi')
 
 # Find slope global maximum.
 # Should be located at inflection point on left side of main k-mer peak
