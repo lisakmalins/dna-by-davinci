@@ -32,9 +32,6 @@ step_size: 3
 bed_regions:
   - example.bed
 
-# Estimation of read error rate (recommended 0.01 for Illumina)
-error_rate: 0.01
-
 fastq_dump:
   # Number of threads to use for dumping fastq from SRA
   threads: 4
@@ -49,6 +46,10 @@ subsampling:
 jellyfish:
   # Number of threads to use for counting with jellyfish
   threads: 20
+  # Estimation of sequencing error rate in reads.
+  # Required by Jellyfish to calculate hash size.
+  # (Recommended 0.01 for Illumina sequencing)
+  error_rate: 0.01
 mapping:
   # Number of threads to use for mapping with bwa
   threads: 2

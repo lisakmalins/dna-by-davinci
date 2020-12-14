@@ -227,7 +227,7 @@ def expected_kmers(wildcards=False):
 
     G = config["genome_size"]
     c = config["subsampling"]["max_coverage"]
-    e = config["error_rate"]
+    e = config["jellyfish"]["sequencing_error_rate"]
     k = config["kmer_size"]
 
     # Replace c with actual coverage if less than max
