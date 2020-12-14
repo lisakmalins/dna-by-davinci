@@ -574,9 +574,22 @@ rule binned_count_plot:
     shell:
         "Rscript davinci/R/binned_coverage.R {input} {output}"
 
-rule kmer_count_plot:
+# Reads k-mer histogram output from Jellyfish
+# (number vs. abundance), and adds columns for slope,
+# cumulative sum, and cumulative fraction (abundance quantile).
+rule kmer_quantile_and_slope:
     input:
         "data/kmer-counts/{p}{read}_{k}mer_histo.txt"
+    output:
+        "data/kmer-counts/{p}{read}_{k}mer_histo_quantile_slope.tsv"
+    wildcard_constraints:
+        read=config["reads"]
+    shell:
+        "Rscript davinci/R/kmer_quantile_and_slope.R {input} {output}"
+
+rule kmer_count_plot:
+    input:
+        "data/kmer-counts/{p}{read}_{k}mer_histo_quantile_slope.tsv"
     output:
         "data/plots/{p}{read}_{k}mer_histo.{ext}"
     wildcard_constraints:
