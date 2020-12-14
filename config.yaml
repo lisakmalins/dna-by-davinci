@@ -1,25 +1,17 @@
-# This is for a rerun of davinci on arabidopsis with better reads.
-# Folder is called "arabidopsis-by-artemisia" on bruno.
+# This config is for Arabidopsis thaliana.
 
+# Accession of reads to download from NCBI SRA,
+# or name of reads file (without .fastq.gz) located in data/reads/.
 reads: ERR2929052
-
-# Estimation of read error rate (recommended 0.01 for Illumina)
-error_rate: 0.01
 
 # Genome filename
 genome: "TAIR10_chr_all.fas"
-# Approximate genome size
-genome_size: 135000000
-# Optional: URL of genome to download
+# Optional: URL to download genome
 genome_download: https://www.arabidopsis.org/download_files/Genes/TAIR10_genome_release/TAIR10_chromosome_files/TAIR10_chr_all.fas
 
-# K-mer size (recommended 17)
-kmer_size: 17
-# Probe size (recommended 45)
-oligo_size: 45
-# Distance between start of consecutive oligos (recommended 3)
-step_size: 3
-
+# Approximate genome size
+genome_size: 135000000
+# Bin size for probe coverage plot
 binsize: 1000000
 
 # Which sequences from the genome would you like to design oligos for?
@@ -30,9 +22,18 @@ sequences:
   - 4
   - 5
 
+# K-mer size (recommended 17)
+kmer_size: 17
+# Probe size (recommended 45)
+oligo_size: 45
+# Distance between start of consecutive oligos (recommended 3)
+step_size: 3
 
 bed_regions:
   - example.bed
+
+# Estimation of read error rate (recommended 0.01 for Illumina)
+error_rate: 0.01
 
 fastq_dump:
   # Number of threads to use for dumping fastq from SRA
