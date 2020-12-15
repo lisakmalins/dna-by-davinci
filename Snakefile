@@ -80,20 +80,6 @@ rule parallel_prefetched_fastq_dump:
 
 ###------------------- Estimate coverage --------------------###
 
-ruleorder: estimate_bases > estimate_bases_gz
-
-# Estimate number of bases in fastq reads.
-# Calculate from read line length and number of lines.
-rule estimate_bases:
-    input:
-        "data/reads/{read}.fastq"
-    output:
-        "data/reads/{read}_numbases.txt"
-    shell: """
-        echo "Estimating number of bases in {input}"
-        cat {input} | paste - - - - | cut -f2 | tr -d '\\n' | wc -c | xargs echo > {output}
-   """
-
 # Estimate number of bases in gzipped fastq reads.
 # Calculate from read line length and number of lines.
 rule estimate_bases_gz:
