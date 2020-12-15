@@ -111,25 +111,6 @@ checkpoint estimate_coverage:
 
 
 ###--------------------- Subsample if necessary ---------------------###
-# Use unzipped reads if available
-ruleorder: uninterleave > uninterleave_gz
-
-# Uninterleave reads into forward and reverse, then gzip
-rule uninterleave:
-    input:
-        "data/reads/{read}.fastq"
-    output:
-        temp("data/reads/{read}-1.fastq.gz"),
-        temp("data/reads/{read}-2.fastq.gz")
-    threads:
-        config["subsampling"]["threads"]
-    shell:
-        """
-        cat {input} \
-            | paste - - - - - - - - \
-            | tee >(cut -f 1-4 | tr '\t' '\n' | pigz -p {threads} > {output[0]}) \
-            | cut -f 5-8 | tr '\t' '\n' | pigz -p {threads} > {output[1]}
-        """
 
 # Uninterleave gzipped reads into forward and reverse, then gzip
 rule uninterleave_gz:
