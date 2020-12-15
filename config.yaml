@@ -60,6 +60,11 @@ oligo_filtering:
     max_htm: 35
     # Minimum difference between melting temperature and hairpin melting temperature (primer3)
     min_dtm: 10
+  bwa:
+    # Minimum alignment score of oligo to genome (bwa)
+    min_AS: 45
+    # Maximum suboptimal alignment score of oligo to genome (bwa)
+    max_XS: 31
 mapping:
   # Number of threads to use for mapping with bwa
   threads: 2

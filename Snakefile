@@ -446,8 +446,8 @@ rule filter_bwa:
     output:
         "data/maps/split/{genome}_{o}mers_filtered_{chr}.sam"
     params:
-        bwa_min_AS=45,
-        bwa_max_XS=31
+        bwa_min_AS=config["oligo_filtering"]["bwa"]["min_AS"],
+        bwa_max_XS=config["oligo_filtering"]["bwa"]["max_XS"]
     shell:
         "python davinci/FilterOligos/FilterSam.py -i {input} -o {output} \
         --bwa-min-AS {params.bwa_min_AS} --bwa-max-XS {params.bwa_max_XS}"
