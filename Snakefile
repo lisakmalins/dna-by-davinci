@@ -403,10 +403,10 @@ rule primer3_homopolymer_filter:
     output:
         "data/oligos/{genome}_{o}mers_{chr}_filtered.fasta"
     params:
-        min_tm=37,
-        max_htm=35,
-        min_dtm=10,
-        max_homopolymer=5
+        max_homopolymer=config["oligo_filtering"]["max_homopolymer"],
+        min_tm=config["oligo_filtering"]["primer3"]["min_tm"],
+        max_htm=config["oligo_filtering"]["primer3"]["max_htm"],
+        min_dtm=config["oligo_filtering"]["primer3"]["min_dtm"]
     shell:
         "python davinci/FilterOligos/FilterFasta.py -i {input} -o {output} \
         --min-tm {params.min_tm} --max-htm {params.max_htm} --min-dtm {params.min_dtm} \

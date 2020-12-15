@@ -50,6 +50,16 @@ jellyfish:
   # Required by Jellyfish to calculate hash size.
   # (Recommended 0.01 for Illumina sequencing)
   error_rate: 0.01
+oligo_filtering:
+  # Maximum number of consecutive identical bases
+  max_homopolymer: 5
+  primer3:
+    # Minimum melting temperature for oligos (primer3)
+    min_tm: 37
+    # Maximum hairpin melting temperature for oligos (primer3)
+    max_htm: 35
+    # Minimum difference between melting temperature and hairpin melting temperature (primer3)
+    min_dtm: 10
 mapping:
   # Number of threads to use for mapping with bwa
   threads: 2
