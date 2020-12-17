@@ -223,17 +223,6 @@ rule print_hash_size:
     run:
         print(expected_kmers())
 
-# Unzip reads for Jellyfish
-rule unzip_reads:
-    input:
-        "data/reads/{p}{read}.fastq.gz"
-    output:
-        "data/reads/{p}{read}.fastq"
-    threads:
-        config["jellyfish"]["threads"]
-    shell:
-        "unpigz -p {threads} -c {input} > {output}"
-
 rule count_pass1:
     input:
         "data/reads/{p}{read}.fastq"
