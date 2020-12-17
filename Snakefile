@@ -225,7 +225,7 @@ rule print_hash_size:
 
 rule count_pass1:
     input:
-        "data/reads/{p}{read}.fastq"
+        "data/reads/{p}{read}.fastq.gz"
     params:
         k=config["kmer_size"],
         bcsize=expected_kmers
@@ -234,11 +234,11 @@ rule count_pass1:
     threads:
         config["jellyfish"]["threads"]
     shell:
-        "jellyfish bc -m {params.k} -C -s {params.bcsize} -t {threads} -o {output} {input}"
+        "jellyfish bc -m {params.k} -C -s {params.bcsize} -t {threads} -o {output} <(unpigz -c {input})"
 
 rule count_pass2:
     input:
-        fastq="data/reads/{p}{read}.fastq",
+        fastq="data/reads/{p}{read}.fastq.gz",
         bc="data/kmer-counts/{p}{read}.bc"
     params:
         k=config["kmer_size"],
@@ -248,7 +248,7 @@ rule count_pass2:
     threads:
         config["jellyfish"]["threads"]
     shell:
-        "jellyfish count -m {params.k} -C -s {params.genomesize} -t {threads} --bc {input.bc} -o {output} {input.fastq}"
+        "jellyfish count -m {params.k} -C -s {params.genomesize} -t {threads} --bc {input.bc} -o {output} <(unpigz -c {input.fastq})"
 
 rule jellyfish_dump:
     input:
