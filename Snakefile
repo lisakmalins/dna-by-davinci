@@ -127,6 +127,8 @@ rule uninterleave_gz:
             | paste - - - - - - - - \
             | tee >(cut -f 1-4 | tr '\t' '\n' | pigz -p {threads} > {output[0]}) \
             | cut -f 5-8 | tr '\t' '\n' | pigz -p {threads} > {output[1]}
+        # Check that output is gzipped properly before continuing
+        pigz -t {output}
         """
 
 def calculate_subsample_fraction(wildcards):
@@ -165,6 +167,8 @@ rule subsample:
         unpigz -p {threads} -c {input} | \
         seqtk sample -s{params.seed} /dev/fd/0 {params.subsampling_fraction} | \
         pigz -p {threads} > {output}
+        # Check that output is gzipped properly before continuing
+        pigz -t {output}
         """
 
 # Interleave subsampled gzipped reads back into one gzipped file.
@@ -184,6 +188,8 @@ rule interleave:
         paste <(unpigz -p {threads} -c {input[0]} | paste - - - -) \
         <(unpigz -p {threads} -c {input[1]} | paste - - - -) \
         | tr '\t' '\n' | pigz -p {threads} > {output}
+        # Check that output is gzipped properly before continuing
+        pigz -t {output}
         """
 
 ###--------------------- Count k-mer frequencies with Jellyfish ---------------------###
