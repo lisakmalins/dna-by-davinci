@@ -125,8 +125,8 @@ rule uninterleave_gz:
         """
         unpigz -p {threads} -c {input} \
             | paste - - - - - - - - \
-            | tee >(cut -f 1-4 | tr '\t' '\n' | pigz -p {threads} > {output[0]}) \
-            | cut -f 5-8 | tr '\t' '\n' | pigz -p {threads} > {output[1]}
+            | tee >(cut -f 1-4 | tr '\\t' '\\n' | gzip > {output[0]}) \
+            | cut -f 5-8 | tr '\\t' '\\n' | gzip > {output[1]}
         # Check that output is gzipped properly before continuing
         pigz -t {output}
         """
