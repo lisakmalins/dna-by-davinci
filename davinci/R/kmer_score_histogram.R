@@ -20,7 +20,8 @@ score_histo <- read_csv(source,
 # Plot
 ggplot(score_histo, aes(x = score, y = frequency)) +
   geom_col() +
-  scale_x_continuous(limits = c(0,3000)) +
+  # Zoom x-axis without clipping
+  coord_cartesian(xlim=c(0, 3000)) +
   labs(title = "K-mer Score Distribution", x = "K-mer score", y = "Frequency")
 
 # Save
