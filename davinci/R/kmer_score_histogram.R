@@ -14,7 +14,8 @@ print(paste("Reading k-mer score histogram from", source))
 print(paste("Saving k-mer score plot to", output))
 
 # Read in data
-score_histo <- read_csv(source)
+score_histo <- read_csv(source,
+                        col_types="ii")
 
 # Plot
 ggplot(score_histo, aes(x = score, y = frequency)) +
