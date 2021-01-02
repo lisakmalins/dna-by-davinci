@@ -68,11 +68,16 @@ ggplot(kmers, aes(x = abundance, y = number)) +
   # Zoom x- and y- axes without clipping
   coord_cartesian(xlim = c(0, x_cutoff),
                   ylim = c(0, y_cutoff)) +
-  # Add x ticks/labels by 10, plus an extra for the peak
-  scale_x_continuous(breaks = c(seq(from=0, to=x_cutoff, by=10),
-                                peak$x)) +
-  # Add vertical line for peak
+  # Add x ticks/labels by 10
+  scale_x_continuous(breaks = seq(from = 0,
+                                  to = x_cutoff,
+                                  by = 10)) +
+  # Add vertical line and label for peak
   geom_vline(xintercept = peak$x) +
+  annotate(geom = "label",
+           label = peak$x,
+           x = peak$x,
+           y = peak$y * 1.075) +
   labs(title = "Number of K-mers by Abundance",
        x = "K-mer abundance in reads",
        y = "Number of distinct k-mers")
