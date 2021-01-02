@@ -24,6 +24,9 @@ if (length(args) >= 3) {
                "Must be a comma-separated list of integers.\n",
                "For example: 100,200,300\n",
                "Unexpected input was:", vlines_argument))
+  } else {
+    print("Vertical line argument detected.")
+    print(paste("Vertical lines will be drawn at the following x-coordinates:", args[3]))
   }
 
   # Split argument into vector of integers
