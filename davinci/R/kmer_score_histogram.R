@@ -1,4 +1,6 @@
 # Usage: Rscript kmer_score_histogram.R {input.txt} {output.ext}
+# A comma-separated list of coordinates to draw vertical lines may be given as a 3rd argument.
+# For example: Rscript kmer_score_histogram.R {input.txt} {output.ext} 200,1000
 
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
