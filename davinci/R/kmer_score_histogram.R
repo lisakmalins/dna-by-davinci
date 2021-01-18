@@ -44,7 +44,15 @@ if (length(args) >= 3) {
 score_histo <- read_csv(source,
                         col_types="ii")
 
-x_cutoff = 3000
+# Find score with greatest frequency
+score_mode <-
+  score_histo %>%
+  filter(frequency==max(score_histo$frequency)) %>%
+  slice(1) %>%
+  pull(score)
+
+# X-axis cutoff will be 3 * the score with greatest frequency
+x_cutoff = score_mode * 3
 
 # Plot
 ggplot(score_histo, aes(x = score, y = frequency)) +
