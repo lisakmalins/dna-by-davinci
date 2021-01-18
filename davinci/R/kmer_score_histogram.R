@@ -17,20 +17,23 @@ print(paste("Saving k-mer score plot to", output))
 
 # Optional: accept comma-separated-list of vertical lines to draw on histogram
 if (length(args) >= 3) {
-  # Verify argument contains no illegal characters
-  if (!grepl("^[0-9,]*$", args[3])) {
+  vertical_line_argument <- args[3]
+
+  # Stop if argument contains illegal characters
+  if (!grepl("^[0-9,]*$", vertical_line_argument)) {
     stop(paste("Optional third argument to this script accepts\n",
                "a list of vertical lines to draw on the histogram.\n",
                "Must be a comma-separated list of integers.\n",
                "For example: 100,200,300\n",
-               "Unexpected input was:", args[3]))
+               "Unexpected third argument was:", vertical_line_argument))
   } else {
+    # If vertical line argument is good, print message to terminal
     print("Vertical line argument detected.")
-    print(paste("Vertical lines will be drawn at the following x-coordinates:", args[3]))
+    print(paste("Vertical lines will be drawn at the following x-coordinates:", vertical_line_argument))
   }
 
   # Split argument into vector of integers
-  vlines <- args[3] %>% strsplit(",") %>% unlist() %>% as.integer()
+  vlines <- vertical_line_argument %>% strsplit(",") %>% unlist() %>% as.integer()
 
 } else {
   # If no argument provided, save empty vector instead
