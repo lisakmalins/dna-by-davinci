@@ -58,7 +58,7 @@ print(paste("Peak detected at abundance", peak$x,
 x_cutoff <-
   min(which(kmers$cum_fraction > 0.997)) %>%
   min(150)
-# Y-axis cutoff will be 110% of y_peak
+# Y-axis cutoff will be 110% of peak y-coordinate
 y_cutoff <- round(peak$y * 1.1)
 
 # Plot
