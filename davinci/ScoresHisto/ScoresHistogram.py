@@ -36,7 +36,6 @@ output = open(outputname, 'w')
 print("Reading scores from", filename)
 print("Score histogram will be written to", outputname)
 
-
 # Get length of file for progress output
 source.seek(0,2)
 filelength = float(source.tell())
@@ -46,22 +45,22 @@ percent = 10
 # Count scores into default dictionary
 scores_dict = defaultdict(int)
 
-line = source.readline()
-
-while(line):
+# Count score frequencies in SAM file
+while(True):
+    # Read line
+    line = source.readline()
+    if not line: break
     # Skip header lines
-    if line[0] == "@":
-        line = source.readline()
-        continue
+    if line[0] == "@": continue
+
     # Output progress message
     if (source.tell() / filelength * 100) > percent:
         print("Read progress: " + str(percent) + "%")
         percent += 10
+
     # Get score from last field, cast to int, and add to dictionary
     score = int(line.split("\t")[-1][5:].rstrip("\n"))
     scores_dict[score] += 1
-
-    line = source.readline()
 
 # Output score histogram as CSV
 print("Read complete. Writing score histogram to", outputname)
