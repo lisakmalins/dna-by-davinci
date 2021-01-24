@@ -57,8 +57,8 @@ while(line):
     if (source.tell() / filelength * 100) > percent:
         print("Read progress: " + str(percent) + "%")
         percent += 10
-    # Get score and put into dictionary
-    score = line.split("\t")[-1][5:].rstrip("\n")
+    # Get score from last field, cast to int, and add to dictionary
+    score = int(line.split("\t")[-1][5:].rstrip("\n"))
     scores_dict[score] += 1
 
     line = source.readline()
@@ -67,7 +67,7 @@ while(line):
 print("Read complete. Writing score histogram to", outputname)
 
 output.write("score, frequency\n")
-for s, f in scores_dict.items():
+for s, f in sorted(scores_dict.items()):
     output.write(str(s) + "," + str(f) + "\n")
 
 print("Write complete. Have a fantastic day!")
