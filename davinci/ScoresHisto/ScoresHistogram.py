@@ -58,8 +58,11 @@ while(True):
         print("Read progress: " + str(percent) + "%")
         percent += 10
 
-    # Get score from last field, cast to int, and add to dictionary
-    score = int(line.split("\t")[-1][5:].rstrip("\n"))
+    # Make sure KS:i: field is there
+    assert "KS:i:" in line, "\n\nError: K-mer score tag KS:i: not found in the following SAM record from {}:\n\n{}\n\n".format(source.name, line)
+
+    # Get score from KS:i: field, strip whitespace, cast to int, and add to dictionary
+    score = int(line.split("KS:i:")[-1].split()[0])
     scores_dict[score] += 1
 
 # Output score histogram as CSV
