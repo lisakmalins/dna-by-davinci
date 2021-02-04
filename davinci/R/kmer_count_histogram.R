@@ -19,19 +19,26 @@ expected_colnames <- c("abundance",
                        "cum_fraction",
                        "slope")
 
+# Read first line only and split on any whitespace to get colnames
+detected_colnames <-
+  read_lines(source, n_max=1) %>%
+  strsplit("\\s+") %>%
+  unlist()
+
+# Crash if columns in data are not as expected
+if (!identical(detected_colnames, expected_colnames)) {
+  stop(paste("Problem parsing", source,
+             "\nExpected the following column names:\n",
+              paste(expected_colnames, collapse=" "),
+              "\nBut instead found:\n",
+              paste(detected_colnames, collapse=" ")))
+}
+
 # Read in data
 kmers <- read_delim(source,
                     delim = "\t",
                     col_names = TRUE,
                     col_types = 'iiidi')
-
-# Crash if columns in data are not as expected
-if (!identical(colnames(kmers), expected_colnames))
-  stop(paste("Problem parsing", source,
-             "\nExpected the following column names:\n",
-              paste(expected_colnames, collapse=" "),
-              "\nBut instead found:\n",
-              paste(colnames(kmers), collapse=" ")))
 
 # Find slope global maximum.
 # Should be located at inflection point on left side of main k-mer peak
