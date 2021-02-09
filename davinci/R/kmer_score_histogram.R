@@ -51,6 +51,15 @@ score_mode <-
   slice(1) %>%
   pull(score)
 
+# Drastically speed up plot time for large genomes
+# by discarding scores greater than peak * 6
+print(paste("Number of rows in score histogram dataframe:", nrow(score_histo)))
+discard_cutoff <- score_mode * 6
+score_histo <- score_histo %>%
+  filter(score <= discard_cutoff)
+print(paste("Filtering rows with score greater than:", discard_cutoff))
+print(paste("Rows remaining in dataframe:", nrow(score_histo)))
+
 # X-axis cutoff will be 3 * the score with greatest frequency
 x_cutoff = score_mode * 3
 
