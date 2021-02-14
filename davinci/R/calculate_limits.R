@@ -1,4 +1,4 @@
-# Usage: Rscript calculate_limits.R {input.txt} {output.txt}
+# Usage: Rscript calculate_limits.R {input.txt} {output.tsv}
 
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(readr))
@@ -13,7 +13,7 @@ if (length(args) >= 3) {
 #output = snakemake@output[1]
 
 print(paste("Reading k-mer count histogram from", source))
-print(paste("Saving k-mer count peak to", output))
+print(paste("Saving k-mer count peak and k-mer score limits to", output))
 
 # Read in data
 kmers <- read_delim(source, delim=" ", col_names = F, col_types='ii')
@@ -24,5 +24,14 @@ peak <- kmers_abridged[which.max(kmers_abridged$X2), 1] %>% as.numeric()
 lower <- round((45 - 17 + 1) * peak * 0.375)
 upper <- round((45 - 17 + 1) * peak * 1.8125)
 
+# Build matrix from key-value pairs and convert to dataframe
+info <- rbind(
+    c("count_peak", peak),
+    c("score_lower_limit", lower),
+    c("score_upper_limit", upper)
+  ) %>% as.data.frame()
+
+print(info)
+
 # Write peak to disk
-write(paste(peak, lower, upper), output)
+write_tsv(info, output)
