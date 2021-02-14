@@ -1,7 +1,7 @@
 # Usage: Rscript calculate_limits.R {input.txt} {output.txt}
 
-library(dplyr)
-library(readr)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(readr))
 
 args <- commandArgs(trailingOnly = TRUE)
 source = args[1]
