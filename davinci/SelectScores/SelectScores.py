@@ -36,13 +36,13 @@ try:
             log.write("Kindly berate Lisa that snakemake.log is not a thing\n")
 
 
-    # Read limits from file
-    # Format is peak lower_bound upper_bound
+    # Read limits from file, format is TSV of key-value pairs
+    # Parse key-value pairs into dictionary
     limits_file = open(snakemake.input[1], 'r')
-    limits_data = limits_file.read().strip()
-    peak = int(limits_data.split()[0])
-    lb = int(limits_data.split()[1])
-    ub = int(limits_data.split()[2])
+    limits_data = dict([line.split() for line in limits_file.readlines()])
+    peak = int(limits_data["count_peak"])
+    lb = int(limits_data["score_lower_limit"])
+    ub = int(limits_data["score_upper_limit"])
 
 # Original implementation for running from command line
 except NameError:

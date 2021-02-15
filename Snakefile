@@ -463,7 +463,7 @@ rule score_histogram:
 rule score_select:
     input:
         "data/scores/{genome}_{o}mers_scores.sam",
-        "data/kmer-counts/limits.txt"
+        "data/kmer-counts/limits.tsv"
     output:
         "data/probes/{genome}_{o}mers_probes_selected.sam"
     log:
