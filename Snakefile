@@ -562,15 +562,15 @@ rule kmer_count_plot:
 rule kmer_score_plot:
     input:
         scores="data/scores/{genome}_{o}mers_scores_histo.txt",
-        limits="data/kmer-counts/limits.txt"
+        limits="data/kmer-counts/limits.tsv"
     output:
         "data/plots/{genome}_{o}mers_scores_histo.{ext}"
     run:
-        # Get coordinates of vertical lines to draw on histogram from janky limits.txt file
+        # Get coordinates of vertical lines to draw on histogram from limits.tsv file
         with open(input.limits, 'r') as limits_file:
-            count_peak, score_lower_bound, score_upper_bound = limits_file.read().split()
+            lines = dict([line.split() for line in limits_file.readlines()])
             # Save into a new parameter
-            params.vlines = ",".join([score_lower_bound, score_upper_bound])
+            params.vlines = ",".join([lines["score_lower_limit"], lines["score_upper_limit"]])
         shell("Rscript davinci/R/kmer_score_histogram.R {input.scores} {output} {params.vlines}")
 
 rule plots_done:
