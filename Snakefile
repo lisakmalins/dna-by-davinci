@@ -311,7 +311,7 @@ rule calculate_peak:
     input:
         get_jelly_histo
     output:
-        "data/kmer-counts/limits.txt"
+        "data/kmer-counts/limits.tsv"
     shell:
         "Rscript davinci/R/calculate_limits.R {input} {output}"
 
