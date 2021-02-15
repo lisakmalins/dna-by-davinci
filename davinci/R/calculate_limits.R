@@ -34,4 +34,4 @@ info <- rbind(
 print(info)
 
 # Write peak to disk
-write_tsv(info, output)
+write_tsv(info, output, col_names=FALSE)
