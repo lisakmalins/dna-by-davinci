@@ -18,20 +18,22 @@ print(paste("Saving k-mer count peak and k-mer score limits to", output))
 # Read in data
 kmers <- read_delim(source, delim=" ", col_names = F, col_types='ii')
 
-# Find peak
+# Find k-mer count peak
 kmers_abridged <- kmers %>% slice(-1:-10)
-peak <- kmers_abridged[which.max(kmers_abridged$X2), 1] %>% as.numeric()
-lower <- round((45 - 17 + 1) * peak * 0.375)
-upper <- round((45 - 17 + 1) * peak * 1.8125)
+count_peak <- kmers_abridged[which.max(kmers_abridged$X2), 1] %>% as.numeric()
+
+# Decide score upper and lower bound
+score_lower_limit <- round((45 - 17 + 1) * count_peak * 0.375)
+score_upper_limit <- round((45 - 17 + 1) * count_peak * 1.8125)
 
 # Build matrix from key-value pairs and convert to dataframe
 info <- rbind(
-    c("count_peak", peak),
-    c("score_lower_limit", lower),
-    c("score_upper_limit", upper)
+    c("count_peak", count_peak),
+    c("score_lower_limit", score_lower_limit),
+    c("score_upper_limit", score_upper_limit)
   ) %>% as.data.frame()
 
 print(info)
 
-# Write peak to disk
+# Write info to disk as 2-column TSV of key-value pairs
 write_tsv(info, output, col_names=FALSE)
