@@ -23,8 +23,9 @@ kmers_abridged <- kmers %>% slice(-1:-10)
 count_peak <- kmers_abridged[which.max(kmers_abridged$X2), 1] %>% as.numeric()
 
 # Decide score upper and lower bound
-score_lower_limit <- round((45 - 17 + 1) * count_peak * 0.375)
-score_upper_limit <- round((45 - 17 + 1) * count_peak * 1.8125)
+predicted_score_peak <- count_peak * (45 - 17 + 1)
+score_lower_limit <- round(predicted_score_peak * 0.375)
+score_upper_limit <- round(predicted_score_peak * 1.8125)
 
 # Build matrix from key-value pairs and convert to dataframe
 info <- rbind(
