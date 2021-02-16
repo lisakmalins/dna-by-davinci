@@ -570,7 +570,9 @@ rule kmer_score_plot:
         with open(input.limits, 'r') as limits_file:
             lines = dict([line.split() for line in limits_file.readlines()])
             # Save into a new parameter
-            params.vlines = ",".join([lines["score_lower_limit"], lines["score_upper_limit"]])
+            params.vlines = ",".join([lines["score_lower_limit"],
+                                      lines["predicted_score_peak"],
+                                      lines["score_upper_limit"]])
         shell("Rscript davinci/R/kmer_score_histogram.R {input.scores} {output} {params.vlines}")
 
 rule plots_done:
