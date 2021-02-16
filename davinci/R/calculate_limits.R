@@ -30,6 +30,7 @@ score_upper_limit <- round(predicted_score_peak * 1.8125)
 # Build matrix from key-value pairs and convert to dataframe
 info <- rbind(
     c("count_peak", count_peak),
+    c("predicted_score_peak", predicted_score_peak),
     c("score_lower_limit", score_lower_limit),
     c("score_upper_limit", score_upper_limit)
   ) %>% as.data.frame()
