@@ -15,12 +15,17 @@ if (length(args) >= 3) {
 print(paste("Reading k-mer count histogram from", source))
 print(paste("Saving k-mer count peak and k-mer score limits to", output))
 
+source("davinci/R/validate_kmer_histo_colnames.R")
+
 # Read in data
-kmers <- read_delim(source, delim=" ", col_names = F, col_types='ii')
+kmers <- read_delim(source,
+                    delim="\t",
+                    col_names = TRUE,
+                    col_types='iiidi')
 
 # Find k-mer count peak
 kmers_abridged <- kmers %>% slice(-1:-10)
-count_peak <- kmers_abridged[which.max(kmers_abridged$X2), 1] %>% as.numeric()
+count_peak <- kmers_abridged[which.max(kmers_abridged$number), 1] %>% as.numeric()
 
 # Decide score upper and lower bound
 predicted_score_peak <- count_peak * (45 - 17 + 1)

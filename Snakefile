@@ -292,6 +292,10 @@ def get_jelly_histo(wildcards):
     return "data/kmer-counts/{p}{read}_{k}mer_histo.txt".format(
     p=prefix(), read=config["reads"], k=config["kmer_size"])
 
+def get_jelly_histo_tsv(wildcards):
+    return "data/kmer-counts/{p}{read}_{k}mer_histo_quantile_slope.tsv".format(
+    p=prefix(), read=config["reads"], k=config["kmer_size"])
+
 def get_jelly_dump(wildcards):
     return "data/kmer-counts/{p}{read}_{k}mer_dumps.fa".format(
     p=prefix(), read=config["reads"], k=config["kmer_size"])
@@ -309,7 +313,7 @@ rule jellyfish_done:
 
 rule calculate_peak:
     input:
-        get_jelly_histo
+        get_jelly_histo_tsv
     output:
         "data/kmer-counts/limits.tsv"
     shell:
