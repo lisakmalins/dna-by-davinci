@@ -1,7 +1,7 @@
 # DNA by da Vinci
-Pipeline for designing whole-chromosome oligo-FISH paints. Inspired by Jiming Jiang and Jim Birchler's [chromosome-specific FISH library in maize](https://doi.org/10.1073/pnas.1813957116) (codename: "Maize by Monet").
+Pipeline for designing whole-chromosome oligo-FISH paints. Inspired by Jiming Jiang and Jim Birchler's [chromosome-specific FISH library in maize](https://doi.org/10.1073/pnas.1813957116) (nicknamed "Maize by Monet").
 
-Developed by Lisa Malins under direction from Kirk Amundson in the [Comai Lab](http://comailab.genomecenter.ucdavis.edu/index.php/Main_Page) at the [UC Davis Genome Center](https://genomecenter.ucdavis.edu/).
+Developed by Lisa Malins, supervised by Kirk Amundson in the [Luca Comai Lab](http://comailab.genomecenter.ucdavis.edu/index.php/Main_Page) at the [UC Davis Genome Center](https://genomecenter.ucdavis.edu/).
 
 ## Summary
 ### __Part 1A__: Slice genome into long oligos
