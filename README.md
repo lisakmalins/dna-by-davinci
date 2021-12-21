@@ -25,21 +25,24 @@ Check out my 3-minute intro to DNA by da Vinci and whole-chromosome paints on Yo
 
 ## Test Case
 1. Git clone this repository.
-```
+```bash
 git clone https://github.com/lisakmalins/dna-by-davinci.git
 cd dna-by-davinci
 ```
+
 2. Install Conda.
-```
+```bash
 #TODO
 ```
+
 3. Build and activate the Conda environment.
-```
+```bash
 conda env create -f environment.yaml
 source activate davinci
 ```
+
 4. Go to data/seqs/ folder, download reference genome, unzip, and rename.
-```
+```bash
 cd data/seqs
 wget ftp://ftp.ensemblgenomes.org/pub/plants/release-36/fasta/zea_mays/dna/Zea_mays.AGPv4.dna.toplevel.fa.gz
 gunzip -c Zea_mays.AGPv4.dna.toplevel.fa.gz > Zea_mays.AGPv4.fa
@@ -49,13 +52,13 @@ gunzip -c Zea_mays.AGPv4.dna.toplevel.fa.gz > Zea_mays.AGPv4.fa
 
   For example, there may be plastid DNA or unincorporated contigs. Run the following command to see the headers for all your sequences.
 
-  ```
+  ```bash
 grep "^>" Zea_mays.AGPv4.fa
 ```
 
   You should see 10 nuclear chromosomes, 2 plastids, and a bunch of contigs. Run the following command to save the headers for only the 10 chromosomes into `Zea_mays.AGPv4.keep`:
 
-  ```
+  ```bash
 grep "^>" Zea_mays.AGPv4.fa | head -n 10 > Zea_mays.AGPv4.keep
 ```
 
@@ -64,7 +67,7 @@ grep "^>" Zea_mays.AGPv4.fa | head -n 10 > Zea_mays.AGPv4.keep
 6. (Optional) If you have Aspera-connect on your machine, feel free to prefetch SRR2960981.sra and place in data/reads/ folder to make the fastq-dump step faster.
 
 7. Run snakemake!
-```
+```bash
 cd ../..  # Go back up to dna-by-davinci directory
 snakemake --cores 16
 ```
