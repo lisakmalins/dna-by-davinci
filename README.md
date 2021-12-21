@@ -3,6 +3,9 @@ Pipeline for designing whole-chromosome oligo-FISH paints. Inspired by Jiming Ji
 
 Developed by Lisa Malins, supervised by Kirk Amundson in the [Luca Comai Lab](http://comailab.genomecenter.ucdavis.edu/index.php/Main_Page) at the [UC Davis Genome Center](https://genomecenter.ucdavis.edu/).
 
+Check out my 3-minute intro to DNA by da Vinci and whole-chromosome paints!
+<iframe width="560" height="315" src="https://www.youtube.com/embed/u5k5BFxsBy8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## Summary
 ### __Part 1A__: Slice genome into long oligos
 1. Slice a reference genome into overlapping long oligos: for example, all 45-mers separated by a step size of 3.
