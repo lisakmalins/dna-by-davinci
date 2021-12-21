@@ -3,8 +3,9 @@ Pipeline for designing whole-chromosome oligo-FISH paints. Inspired by Jiming Ji
 
 Developed by Lisa Malins, supervised by Kirk Amundson in the [Luca Comai Lab](http://comailab.genomecenter.ucdavis.edu/index.php/Main_Page) at the [UC Davis Genome Center](https://genomecenter.ucdavis.edu/).
 
-Check out my 3-minute intro to DNA by da Vinci and whole-chromosome paints!
-<iframe width="560" height="315" src="https://www.youtube.com/embed/u5k5BFxsBy8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+Check out my 3-minute intro to DNA by da Vinci and whole-chromosome paints on YouTube!  
+[![Link to YouTube video, "DNA by da Vinci – Undergrad Slam"](https://img.youtube.com/vi/u5k5BFxsBy8/0.jpg)](https://www.youtube.com/watch?v=u5k5BFxsBy8)  
+[DNA by da Vinci – Undergrad Slam - YouTube](https://www.youtube.com/watch?v=u5k5BFxsBy8)
 
 ## Summary
 ### __Part 1A__: Slice genome into long oligos
