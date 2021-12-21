@@ -30,9 +30,19 @@ git clone https://github.com/lisakmalins/dna-by-davinci.git
 cd dna-by-davinci
 ```
 
-2. Install Conda.
+2. Install Conda.  
+
+If you are using a work or lab server, ask your sysadmin if conda is installed already. If so, skip to step 3.
 ```bash
-#TODO
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+Review and accept the license, accept or change home location, and answer yes to placing it in your path.
+
+To finish configuring miniconda:
+```bash
+source $HOME/.bashrc
 ```
 
 3. Build and activate the Conda environment.
