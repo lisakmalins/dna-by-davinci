@@ -51,9 +51,9 @@ conda env create -f environment.yaml
 source activate davinci
 ```
 
-4. Go to data/seqs/ folder, download reference genome, unzip, and rename.
+4. Go to `data/genome/` folder, download reference genome, unzip, and rename.
 ```bash
-cd data/seqs
+cd data/genome/
 wget ftp://ftp.ensemblgenomes.org/pub/plants/release-36/fasta/zea_mays/dna/Zea_mays.AGPv4.dna.toplevel.fa.gz
 gunzip -c Zea_mays.AGPv4.dna.toplevel.fa.gz > Zea_mays.AGPv4.fa
 ```
