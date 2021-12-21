@@ -7,7 +7,7 @@ Check out my 3-minute intro to DNA by da Vinci and whole-chromosome paints on Yo
 [![Link to YouTube video, "DNA by da Vinci – Undergrad Slam"](https://img.youtube.com/vi/u5k5BFxsBy8/0.jpg)](https://www.youtube.com/watch?v=u5k5BFxsBy8)  
 [DNA by da Vinci – Undergrad Slam - YouTube](https://www.youtube.com/watch?v=u5k5BFxsBy8)
 
-## Summary
+## Pipeline summary
 ### __Part 1A__: Slice genome into long oligos
 1. Slice a reference genome into overlapping long oligos: for example, all 45-mers separated by a step size of 3.
 2. Map these oligos back to the reference genome to see where they would hybridize and how well.
@@ -23,7 +23,7 @@ Check out my 3-minute intro to DNA by da Vinci and whole-chromosome paints on Yo
 2. Create a histogram of the k-mer scores for the long oligos.
 3. Select the oligos with k-mer scores in the peak region of the histogram. These will be the best probes.
 
-## Test Case
+## Test case
 1. Git clone this repository.
 ```bash
 git clone https://github.com/lisakmalins/dna-by-davinci.git
